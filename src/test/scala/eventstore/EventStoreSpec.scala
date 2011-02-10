@@ -39,15 +39,25 @@ object EventStoreSpec extends Specification {
   "event store with listener" should {
     val received: mutable.Queue[(UUID, AnyRef)] = mutable.Queue()
 
-    subject.listen {
+    def listener: subject.EventListener = {
       (source, event) =>
         received += (source -> event)
     }
+
+    subject.addListener(listener)
 
     "dispatch saved events to listener" in {
       subject.save(StreamA, ExampleEvent("example"))
 
       received must beEqualTo(Seq(StreamA -> ExampleEvent("example")))
+    }
+
+    "support multiple listeners" in {
+      subject.addListener(listener)
+
+      subject.save(StreamA, ExampleEvent("example"))
+
+      received must beEqualTo(Seq(StreamA -> ExampleEvent("example"), StreamA -> ExampleEvent("example")))
     }
   }
 }
