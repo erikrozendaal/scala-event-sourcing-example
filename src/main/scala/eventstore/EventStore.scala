@@ -11,7 +11,7 @@ class EventStore {
     listeners foreach {callback => callback(source, event)}
   }
 
-  def load(source: UUID): Iterable[AnyRef] = storedEvents.getOrElse(source, mutable.Queue())
+  def load(source: UUID): Iterable[AnyRef] = storedEvents.getOrElse(source, Iterable.empty)
 
   def addListener(callback: EventListener) {
     listeners += callback;
