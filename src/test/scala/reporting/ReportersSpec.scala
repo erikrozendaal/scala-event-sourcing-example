@@ -1,7 +1,6 @@
 package com.zilverline.es2
 
 import org.specs.Specification
-import java.util.UUID
 
 package reporting {
   import eventing._
@@ -18,7 +17,7 @@ package reporting {
   class ReportersSpec extends Specification {
     val subject = new Reporters
 
-    val Source = UUID.randomUUID
+    val Source = newIdentifier
 
     def investigator: Investigator[ExampleEvent] = {
       case event => ExampleReport(event)

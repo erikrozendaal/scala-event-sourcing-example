@@ -3,12 +3,11 @@ package com.zilverline.es2
 package indexing {
 
   import eventing._
-  import java.util.UUID
   import org.specs.Specification
 
   object IndexSpec extends Specification {
 
-    val Source = UUID.randomUUID
+    val Source = newIdentifier
 
     val subject = new Indexes
 
