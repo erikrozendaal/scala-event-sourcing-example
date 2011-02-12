@@ -5,12 +5,14 @@ import scala.collection._
 package eventstore {
   import eventing._
 
+  case class Commit(source: EventSourceIdentifier, event: Event)
+
   class EventStore {
-    type EventStoreListener = Message => Unit
+    type EventStoreListener = Commit => Unit
 
     def save(source: EventSourceIdentifier, event: Event) {
       storedEvents.getOrElseUpdate(source, mutable.Queue()) += event;
-      listeners foreach {callback => callback(Message(source, event))}
+      listeners foreach {callback => callback(Commit(source, event))}
     }
 
     def load(source: EventSourceIdentifier): Iterable[Event] = storedEvents.getOrElse(source, Iterable.empty)

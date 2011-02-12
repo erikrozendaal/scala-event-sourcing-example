@@ -24,7 +24,7 @@ package examples {
 
     indexes.add(InstructionIndex())
 
-    eventStore.addListener(message => indexes.process(message.payload))
+    eventStore.addListener(commit => indexes.process(commit.event))
 
     "instruction" should {
       "show up in index when added" in {

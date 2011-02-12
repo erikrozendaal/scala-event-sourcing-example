@@ -41,8 +41,8 @@ package eventstore {
       val received: mutable.Queue[(EventSourceIdentifier, AnyRef)] = mutable.Queue()
 
       def listener: subject.EventStoreListener = {
-        message =>
-          received += (message.source -> message.payload)
+        commit =>
+          received += (commit.source -> commit.event)
       }
 
       subject.addListener(listener)
