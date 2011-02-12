@@ -19,7 +19,7 @@ package indexing {
       subject.add(ExampleIndex(0))
 
       "receive all events" in {
-        subject.process(ExampleEvent(Source, "hello"))
+        subject.process(ExampleEvent("hello"))
 
         subject.get[ExampleIndex].count must beEqualTo(1)
       }

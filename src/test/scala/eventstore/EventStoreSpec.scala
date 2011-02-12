@@ -16,49 +16,49 @@ package eventstore {
 
     "event store" should {
       "save single event" in {
-        subject.save(ExampleEvent(StreamA, "example"))
+        subject.save(StreamA, ExampleEvent("example"))
 
-        subject.load(StreamA) must beEqualTo(Seq(ExampleEvent(StreamA, "example")))
+        subject.load(StreamA) must beEqualTo(Seq(ExampleEvent("example")))
       }
 
       "save multiple events" in {
-        subject.save(ExampleEvent(StreamA, "first"))
-        subject.save(ExampleEvent(StreamA, "second"))
+        subject.save(StreamA, ExampleEvent("first"))
+        subject.save(StreamA, ExampleEvent("second"))
 
-        subject.load(StreamA) must beEqualTo(Seq(ExampleEvent(StreamA, "first"), ExampleEvent(StreamA, "second")))
+        subject.load(StreamA) must beEqualTo(Seq(ExampleEvent("first"), ExampleEvent("second")))
       }
 
       "save multiple events to different sources" in {
-        subject.save(ExampleEvent(StreamA, "a"))
-        subject.save(ExampleEvent(StreamB, "b"))
+        subject.save(StreamA, ExampleEvent("a"))
+        subject.save(StreamB, ExampleEvent("b"))
 
-        subject.load(StreamA) must beEqualTo(Seq(ExampleEvent(StreamA, "a")))
-        subject.load(StreamB) must beEqualTo(Seq(ExampleEvent(StreamB, "b")))
+        subject.load(StreamA) must beEqualTo(Seq(ExampleEvent("a")))
+        subject.load(StreamB) must beEqualTo(Seq(ExampleEvent("b")))
       }
     }
 
     "event store with listener" should {
       val received: mutable.Queue[(EventSourceIdentifier, AnyRef)] = mutable.Queue()
 
-      def listener: subject.EventListener = {
-        (source, event) =>
-          received += (source -> event)
+      def listener: subject.EventStoreListener = {
+        message =>
+          received += (message.source -> message.payload)
       }
 
       subject.addListener(listener)
 
       "dispatch saved events to listener" in {
-        subject.save(ExampleEvent(StreamA, "example"))
+        subject.save(StreamA, ExampleEvent("example"))
 
-        received must beEqualTo(Seq(StreamA -> ExampleEvent(StreamA, "example")))
+        received must beEqualTo(Seq(StreamA -> ExampleEvent("example")))
       }
 
       "support multiple listeners" in {
         subject.addListener(listener)
 
-        subject.save(ExampleEvent(StreamA, "example"))
+        subject.save(StreamA, ExampleEvent("example"))
 
-        received must beEqualTo(Seq(StreamA -> ExampleEvent(StreamA, "example"), StreamA -> ExampleEvent(StreamA, "example")))
+        received must beEqualTo(Seq(StreamA -> ExampleEvent("example"), StreamA -> ExampleEvent("example")))
       }
     }
   }

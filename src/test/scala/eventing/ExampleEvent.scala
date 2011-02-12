@@ -1,3 +1,3 @@
 package com.zilverline.es2.eventing
 
-case class ExampleEvent(source: EventSourceIdentifier, content: String) extends Event
+case class ExampleEvent(content: String) extends Event

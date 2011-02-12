@@ -13,13 +13,13 @@ class Reporters {
     investigators.put(m.erasure, investigator)
   }
 
-  def update(event: Event) {
-    reports.get(event.source) foreach {
-      report => reports.put(event.source, report.applyEvent(event))
+  def update(message: Message) {
+    reports.get(message.source) foreach {
+      report => reports.put(message.source, report.applyEvent(message.payload))
     }
-    investigators.get(event.getClass)
-      .flatMap(_.asInstanceOf[Investigator[Event]].lift.apply(event))
-      .foreach(report => reports.put(event.source, report))
+    investigators.get(message.payload.getClass)
+      .flatMap(_.asInstanceOf[Investigator[Event]].lift.apply(message.payload))
+      .foreach(report => reports.put(message.source, report))
   }
 
   def store(source: EventSourceIdentifier, report: SpecificReport) {

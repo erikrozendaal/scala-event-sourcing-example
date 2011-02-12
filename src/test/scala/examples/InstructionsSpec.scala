@@ -7,7 +7,7 @@ package examples {
   import eventstore._
   import indexing._
 
-  case class InstructionAdded(source: EventSourceIdentifier, text: String) extends Event
+  case class InstructionAdded(text: String) extends Event
 
   case class InstructionIndex(instructions: List[String] = List.empty) extends Index {
     def applyEvent = {
@@ -24,11 +24,11 @@ package examples {
 
     indexes.add(InstructionIndex())
 
-    eventStore.addListener((source, event) => indexes.process(event))
+    eventStore.addListener(message => indexes.process(message.payload))
 
     "instruction" should {
       "show up in index when added" in {
-        eventStore.save(InstructionAdded(Source, "hello"))
+        eventStore.save(Source, InstructionAdded("hello"))
 
         indexes.get[InstructionIndex].instructions must contain("hello")
       }

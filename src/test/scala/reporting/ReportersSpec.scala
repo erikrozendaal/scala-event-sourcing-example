@@ -26,7 +26,7 @@ package reporting {
     "Reporters" should {
       subject.investigate(investigator)
       "generate specific reports based on initial lead" in {
-        subject.update(ExampleEvent(Source, "hello"))
+        subject.update(Message(Source, ExampleEvent("hello")))
 
         subject.retrieve[ExampleReport](Source) must beEqualTo(ExampleReport("hello"))
       }
@@ -35,7 +35,7 @@ package reporting {
     "Specific reports" should {
       subject.store(Source, ExampleReport("hello"))
       "be kept up-to-date of new events" in {
-        subject.update(ExampleEvent(Source, "goodbye"))
+        subject.update(Message(Source, ExampleEvent("goodbye")))
 
         subject.retrieve[ExampleReport](Source) must beEqualTo(ExampleReport("goodbye"))
       }
