@@ -4,8 +4,8 @@ import com.zilverline.es2.events._
 import java.util.UUID
 import scala.collection._
 
-trait SpecificReport {
-  def applyEvent: Event => SpecificReport
+trait Document {
+  def applyEvent: Event => Document
 }
 
 class Reporters {
@@ -22,12 +22,12 @@ class Reporters {
       .foreach(report => reports.put(source, report))
   }
 
-  def store(source: EventSourceIdentifier, report: SpecificReport) {
-    reports.put(source, report)
+  def store(source: EventSourceIdentifier, document: Document) {
+    reports.put(source, document)
   }
 
-  def retrieve[T <: SpecificReport](source: EventSourceIdentifier) = reports(source)
+  def retrieve[T <: Document](source: EventSourceIdentifier) = reports(source)
 
   private val investigators: mutable.Map[Class[_], Investigator[_]] = mutable.Map.empty
-  private val reports: mutable.Map[EventSourceIdentifier, SpecificReport] = mutable.Map.empty
+  private val reports: mutable.Map[EventSourceIdentifier, Document] = mutable.Map.empty
 }

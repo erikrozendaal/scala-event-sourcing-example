@@ -5,10 +5,10 @@ import org.specs.Specification
 package reports {
   import events._
 
-  object ExampleReport {
-    def apply(event: ExampleEvent) = new ExampleReport(event.content)
+  object ExampleDocument {
+    def apply(event: ExampleEvent) = new ExampleDocument(event.content)
   }
-  case class ExampleReport(content: String) extends SpecificReport {
+  case class ExampleDocument(content: String) extends Document {
     def applyEvent = {
       case event: ExampleEvent => copy(event.content)
     }
@@ -20,7 +20,7 @@ package reports {
     val Source = newIdentifier
 
     def investigator: Investigator[ExampleEvent] = {
-      case event => ExampleReport(event)
+      case event => ExampleDocument(event)
     }
 
     "Reporters" should {
@@ -28,16 +28,16 @@ package reports {
       "generate specific reports based on initial lead" in {
         subject.update(Source, ExampleEvent("hello"))
 
-        subject.retrieve[ExampleReport](Source) must beEqualTo(ExampleReport("hello"))
+        subject.retrieve[ExampleDocument](Source) must beEqualTo(ExampleDocument("hello"))
       }
     }
 
     "Specific reports" should {
-      subject.store(Source, ExampleReport("hello"))
+      subject.store(Source, ExampleDocument("hello"))
       "be kept up-to-date of new events" in {
         subject.update(Source, ExampleEvent("goodbye"))
 
-        subject.retrieve[ExampleReport](Source) must beEqualTo(ExampleReport("goodbye"))
+        subject.retrieve[ExampleDocument](Source) must beEqualTo(ExampleDocument("goodbye"))
       }
     }
   }

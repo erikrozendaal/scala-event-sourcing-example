@@ -6,11 +6,11 @@ package events.eventstore {
   import events._
 
   class EventStore {
-    type EventStoreListener = Commit => Unit
+    type EventStoreListener = CommittedEvent => Unit
 
     def commit(source: EventSourceIdentifier, event: Event) {
       storedEvents.getOrElseUpdate(source, mutable.Queue()) += event;
-      listeners foreach {callback => callback(Commit(source, event))}
+      listeners foreach {callback => callback(CommittedEvent(source, event))}
     }
 
     def load(source: EventSourceIdentifier): Iterable[Event] = storedEvents.getOrElse(source, Iterable.empty)

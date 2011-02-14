@@ -4,7 +4,7 @@ package object reports {
   import scala.collection.mutable.{Map => MMap}
   import events._
 
-  type Investigator[T <: Event] = T PartialFunction SpecificReport
+  type Investigator[T <: Event] = T PartialFunction Document
 
   trait Index {
     def applyEvent: Event => Index
