@@ -28,7 +28,7 @@ package examples {
 
     "instruction" should {
       "show up in index when added" in {
-        eventStore.save(Source, InstructionAdded("hello"))
+        eventStore.commit(Source, InstructionAdded("hello"))
 
         indexes.get[InstructionIndex].instructions must contain("hello")
       }

@@ -16,21 +16,21 @@ package eventstore {
 
     "event store" should {
       "save single event" in {
-        subject.save(StreamA, ExampleEvent("example"))
+        subject.commit(StreamA, ExampleEvent("example"))
 
         subject.load(StreamA) must beEqualTo(Seq(ExampleEvent("example")))
       }
 
       "save multiple events" in {
-        subject.save(StreamA, ExampleEvent("first"))
-        subject.save(StreamA, ExampleEvent("second"))
+        subject.commit(StreamA, ExampleEvent("first"))
+        subject.commit(StreamA, ExampleEvent("second"))
 
         subject.load(StreamA) must beEqualTo(Seq(ExampleEvent("first"), ExampleEvent("second")))
       }
 
       "save multiple events to different sources" in {
-        subject.save(StreamA, ExampleEvent("a"))
-        subject.save(StreamB, ExampleEvent("b"))
+        subject.commit(StreamA, ExampleEvent("a"))
+        subject.commit(StreamB, ExampleEvent("b"))
 
         subject.load(StreamA) must beEqualTo(Seq(ExampleEvent("a")))
         subject.load(StreamB) must beEqualTo(Seq(ExampleEvent("b")))
@@ -48,7 +48,7 @@ package eventstore {
       subject.addListener(listener)
 
       "dispatch saved events to listener" in {
-        subject.save(StreamA, ExampleEvent("example"))
+        subject.commit(StreamA, ExampleEvent("example"))
 
         received must beEqualTo(Seq(StreamA -> ExampleEvent("example")))
       }
@@ -56,7 +56,7 @@ package eventstore {
       "support multiple listeners" in {
         subject.addListener(listener)
 
-        subject.save(StreamA, ExampleEvent("example"))
+        subject.commit(StreamA, ExampleEvent("example"))
 
         received must beEqualTo(Seq(StreamA -> ExampleEvent("example"), StreamA -> ExampleEvent("example")))
       }
