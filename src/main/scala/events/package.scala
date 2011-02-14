@@ -3,7 +3,7 @@ package com.zilverline.es2
 import java.util.UUID
 
 package object events {
-  type EventSourceIdentifier = UUID
+  type Identifier = UUID
 
-  def newIdentifier: EventSourceIdentifier = UUID.randomUUID
+  def newIdentifier: Identifier = UUID.randomUUID
 }

@@ -38,7 +38,7 @@ package events.eventstore {
     }
 
     "event store with listener" should {
-      val received: mutable.Queue[(EventSourceIdentifier, AnyRef)] = mutable.Queue()
+      val received: mutable.Queue[(Identifier, AnyRef)] = mutable.Queue()
 
       def listener: subject.EventStoreListener = {
         commit =>

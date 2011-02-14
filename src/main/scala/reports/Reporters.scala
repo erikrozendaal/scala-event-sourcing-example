@@ -13,7 +13,7 @@ class Reporters {
     investigators.put(m.erasure, investigator)
   }
 
-  def update(source: EventSourceIdentifier, event: Event) {
+  def update(source: Identifier, event: Event) {
     reports.get(source) foreach {
       report => reports.put(source, report.applyEvent(event))
     }
@@ -22,12 +22,12 @@ class Reporters {
       .foreach(report => reports.put(source, report))
   }
 
-  def store(source: EventSourceIdentifier, document: Document) {
+  def store(source: Identifier, document: Document) {
     reports.put(source, document)
   }
 
-  def retrieve[T <: Document](source: EventSourceIdentifier) = reports(source)
+  def retrieve[T <: Document](source: Identifier) = reports(source)
 
   private val investigators: mutable.Map[Class[_], Investigator[_]] = mutable.Map.empty
-  private val reports: mutable.Map[EventSourceIdentifier, Document] = mutable.Map.empty
+  private val reports: mutable.Map[Identifier, Document] = mutable.Map.empty
 }
