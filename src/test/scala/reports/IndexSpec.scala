@@ -1,8 +1,8 @@
 package com.zilverline.es2
 
-package indexing {
+package reports {
 
-  import eventing._
+  import events._
   import org.specs.Specification
 
   object IndexSpec extends Specification {

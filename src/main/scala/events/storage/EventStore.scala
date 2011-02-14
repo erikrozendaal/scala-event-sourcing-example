@@ -2,8 +2,8 @@ package com.zilverline.es2
 
 import scala.collection._
 
-package eventstore {
-  import eventing._
+package events.eventstore {
+  import events._
 
   class EventStore {
     type EventStoreListener = Commit => Unit

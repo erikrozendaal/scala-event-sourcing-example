@@ -1,4 +1,4 @@
-package com.zilverline.es2.commanding
+package com.zilverline.es2.commands
 
 import org.specs.Specification
 

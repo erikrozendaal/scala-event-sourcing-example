@@ -3,9 +3,9 @@ package com.zilverline.es2
 import org.specs.Specification
 
 package examples {
-  import eventing._
+  import events._
   import eventstore._
-  import indexing._
+  import reports._
 
   case class InstructionAdded(text: String) extends Event
 

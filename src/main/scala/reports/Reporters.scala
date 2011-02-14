@@ -1,6 +1,6 @@
-package com.zilverline.es2.reporting
+package com.zilverline.es2.reports
 
-import com.zilverline.es2.eventing._
+import com.zilverline.es2.events._
 import java.util.UUID
 import scala.collection._
 

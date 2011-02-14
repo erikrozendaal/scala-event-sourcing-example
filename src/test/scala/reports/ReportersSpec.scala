@@ -2,8 +2,8 @@ package com.zilverline.es2
 
 import org.specs.Specification
 
-package reporting {
-  import eventing._
+package reports {
+  import events._
 
   object ExampleReport {
     def apply(event: ExampleEvent) = new ExampleReport(event.content)

@@ -1,9 +1,10 @@
 package com.zilverline.es2
 
-package object indexing {
-
+package object reports {
   import scala.collection.mutable.{Map => MMap}
-  import eventing._
+  import events._
+
+  type Investigator[T <: Event] = T PartialFunction SpecificReport
 
   trait Index {
     def applyEvent: Event => Index
@@ -22,5 +23,4 @@ package object indexing {
 
     private val indexes: MMap[Class[_], Index] = MMap.empty
   }
-
 }

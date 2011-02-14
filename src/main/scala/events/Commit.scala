@@ -1,5 +1,5 @@
 package com.zilverline.es2
 
-package eventing {
+package events {
   case class Commit(source: EventSourceIdentifier, event: Event)
 }

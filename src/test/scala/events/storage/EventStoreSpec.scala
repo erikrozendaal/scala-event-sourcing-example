@@ -3,9 +3,9 @@ package com.zilverline.es2
 import scala.collection._
 import org.specs.Specification
 
-package eventstore {
+package events.eventstore {
 
-  import eventing._
+  import events._
 
   object EventStoreSpec extends Specification {
 
