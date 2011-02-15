@@ -4,7 +4,7 @@ import org.specs.Specification
 
 package examples {
   import events._
-  import eventstore._
+  import events.storage._
   import reports._
 
   case class InstructionAdded(text: String) extends Event
