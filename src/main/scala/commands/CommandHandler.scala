@@ -3,10 +3,13 @@ package commands
 
 import events._
 
-case class UnitOfWork(aggregate: Option[Identifier], events: Option[Event])
+sealed trait UnitOfWork
+case object Empty extends UnitOfWork
+case object Rejected extends UnitOfWork
+case class Accepted(aggregate: Identifier, event: Event) extends UnitOfWork
 
 object UnitOfWork {
-  def empty = UnitOfWork(None, None)
+  def empty = Empty
 }
 
 abstract class CommandHandler[T <: Command](implicit m: Manifest[T]) extends (T => Transaction) {
@@ -22,11 +25,13 @@ object CommandHandler {
     def apply(command: T) = callback(command)
   }
 
-  def save(aggregate: Identifier, event: Event) = transaction { uow =>
-    uow.copy(Some(aggregate), Some(event))
+  def save(aggregate: Identifier, event: Event) = transaction {
+    case Empty => Accepted(aggregate, event)
+    case Accepted(_, _) => error("cannot change multiple aggregates in single transaction")
+    case Rejected => Rejected
   }
 
   def accept = transaction(identity)
 
-  def reject = transaction(_ => UnitOfWork(None, None))
+  def reject = transaction(_ => Rejected)
 }

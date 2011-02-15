@@ -8,9 +8,11 @@ import events.storage.EventStore
 class CommandBus(eventStore: EventStore) {
   def send(command: Command) {
     val handler = handlers.getOrElse(command.getClass, throw new IllegalArgumentException("no handler for found command: " + command))
-    val uow = handler.invokeWithCommand(command)(UnitOfWork(None, None))
-    if (uow.events.isDefined)
-      eventStore.commit(uow.aggregate.get, uow.events.get)
+    handler.invokeWithCommand(command)(UnitOfWork.empty) match {
+      case Accepted(aggregate, event) => eventStore.commit(aggregate, event)
+      case Empty =>
+      case Rejected =>
+    }
   }
 
   def register[T <: Command](handler: CommandHandler[T]) = {

@@ -18,7 +18,7 @@ object CommandHandlerSpec extends org.specs.Specification {
     "be able to save events" in {
       val result = subject(ExampleCommand("hello"))(UnitOfWork.empty)
 
-      result must beEqualTo(UnitOfWork(Some(AggregateIdentifier), Some(ExampleEvent("content"))))
+      result must beEqualTo(Accepted(AggregateIdentifier, ExampleEvent("content")))
     }
   }
 }
