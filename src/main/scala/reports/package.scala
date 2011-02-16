@@ -1,13 +1,14 @@
 package com.zilverline.es2
 
-package object reports {
-  import scala.collection.mutable.{Map => MMap}
-  import events._
+import events._
+import scala.collection.mutable.{Map => MMap}
 
-  type Investigator[T <: Event] = T PartialFunction Document
+package object reports {
+
+  type Investigator[T] = CommittedEvent PartialFunction Document
 
   trait Index {
-    def applyEvent: Event => Index
+    def applyEvent: CommittedEvent => Index
   }
 
   class Indexes {
@@ -17,7 +18,7 @@ package object reports {
 
     def get[T <: Index](implicit m: Manifest[T]): T = indexes(m.erasure).asInstanceOf[T]
 
-    def process(event: Event) {
+    def process(event: CommittedEvent) {
       indexes transform ((_, index) => index.applyEvent(event))
     }
 

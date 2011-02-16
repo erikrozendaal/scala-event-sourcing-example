@@ -1,8 +1,8 @@
-package com.zilverline.es2
+package com.zilverline
 
 import java.util.UUID
 
-package object events {
+package object es2 {
   type Identifier = UUID
 
   def newIdentifier: Identifier = UUID.randomUUID

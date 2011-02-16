@@ -8,7 +8,7 @@ import commands.CommandHandler._
 import events._
 import events.storage._
 
-trait InvoiceEvent extends Event {
+trait InvoiceEvent {
   def invoiceId: Identifier
 }
 

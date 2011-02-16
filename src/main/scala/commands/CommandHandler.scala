@@ -6,7 +6,7 @@ import events._
 sealed trait UnitOfWork
 case object Empty extends UnitOfWork
 case object Rejected extends UnitOfWork
-case class Accepted(aggregate: Identifier, event: Event) extends UnitOfWork
+case class Accepted(aggregate: Identifier, event: AnyRef) extends UnitOfWork
 
 object UnitOfWork {
   def empty = Empty
@@ -25,7 +25,7 @@ object CommandHandler {
     def apply(command: T) = callback(command)
   }
 
-  def save(aggregate: Identifier, event: Event) = transaction {
+  def save(aggregate: Identifier, event: AnyRef) = transaction {
     case Empty => Accepted(aggregate, event)
     case Accepted(_, _) => error("cannot change multiple aggregates in single transaction")
     case Rejected => Rejected

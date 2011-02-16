@@ -37,11 +37,11 @@ object EventStoreSpec extends Specification {
   }
 
   "event store with listener" should {
-    val received: mutable.Queue[(Identifier, AnyRef)] = mutable.Queue()
+    val received: mutable.Queue[(Identifier, Any)] = mutable.Queue()
 
     def listener: subject.EventStoreListener = {
       commit =>
-        received += (commit.source -> commit.event)
+        received += (commit.source -> commit.payload)
     }
 
     subject.addListener(listener)
