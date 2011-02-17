@@ -1,12 +1,9 @@
 package com.zilverline.es2
 package commands
 
-import events._
-
 object CommandHandlerSpec extends org.specs.Specification {
 
-  import domain._
-  import domain.Behaviors._
+  import behavior._
   import CommandHandler._
 
   val AggregateIdentifier = newIdentifier

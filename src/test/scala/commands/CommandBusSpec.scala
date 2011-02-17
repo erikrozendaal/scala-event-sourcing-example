@@ -3,11 +3,8 @@ package commands
 
 object CommandBusSpec extends org.specs.Specification {
 
-  import domain._
-  import domain.Behaviors._
-  import events._
-  import events.storage._
-  import CommandHandler._
+  import behavior._
+  import eventstore.EventStore
 
   val Source = newIdentifier
 
@@ -23,7 +20,7 @@ object CommandBusSpec extends org.specs.Specification {
   "command bus with handlers" should {
     var handlerInvoked = false
 
-    def testHandler = CommandHandler {command: ExampleCommand => handlerInvoked = true; Behaviors.accept()}
+    def testHandler = CommandHandler {command: ExampleCommand => handlerInvoked = true; behavior.accept()}
     subject.register(testHandler)
 
     "invoke handler based on command type" in {
@@ -40,11 +37,11 @@ object CommandBusSpec extends org.specs.Specification {
   "command bus" should {
     subject.register(CommandHandler {
       command: ExampleCommand =>
-        record(Source, ExampleEvent(command.content)) andThen Behaviors.accept()
+        record(Source, ExampleEvent(command.content)) andThen behavior.accept()
     })
     subject.register(CommandHandler {
       command: AnotherCommand =>
-        record(Source, ExampleEvent(command.content)) andThen Behaviors.reject("failed")
+        record(Source, ExampleEvent(command.content)) andThen behavior.reject("failed")
     })
 
     "commit accepted unit of work" in {

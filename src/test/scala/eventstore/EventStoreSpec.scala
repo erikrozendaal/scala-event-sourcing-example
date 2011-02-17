@@ -1,10 +1,8 @@
 package com.zilverline.es2
-package events.storage
+package eventstore
 
 import scala.collection._
 import org.specs.Specification
-
-import events._
 
 object EventStoreSpec extends Specification {
 

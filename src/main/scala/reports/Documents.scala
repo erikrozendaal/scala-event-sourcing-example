@@ -1,8 +1,6 @@
 package com.zilverline.es2
 package reports
 
-import events._
-
 import scala.collection._
 
 trait Document {

@@ -1,9 +1,7 @@
 package com.zilverline.es2
-package events.storage
+package eventstore
 
 import scala.collection._
-
-import events._
 
 class EventStore {
   type EventStoreListener = Committed[DomainEvent] => Unit

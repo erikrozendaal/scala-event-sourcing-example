@@ -1,7 +1,6 @@
 package com.zilverline.es2
 package reports
 
-import events._
 import org.specs.Specification
 
 object IndexSpec extends Specification {

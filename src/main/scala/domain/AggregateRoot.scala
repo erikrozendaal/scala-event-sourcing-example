@@ -1,57 +1,7 @@
 package com.zilverline.es2
 package domain
 
-import events._
-
-case class UnitOfWork(events: List[Uncommitted[DomainEvent]], eventStore: storage.EventStore) {
-  def record(aggregate: Identifier, event: DomainEvent) = copy(Uncommitted(aggregate, event) :: events)
-}
-
-trait Reaction[+T]
-case class Accepted[+T](uow: UnitOfWork, result: T) extends Reaction[T]
-case class Rejected(message: String) extends Reaction[Nothing]
-
-object Behaviors {
-  def behavior[T](callback: UnitOfWork => Reaction[T]) = new Behavior[T] {
-    def apply(uow: UnitOfWork) = callback(uow)
-  }
-
-  def accept[T](result: T) = behavior(uow => Accepted(uow, result))
-
-  def reject(message: String) = behavior(_ => Rejected(message))
-
-  def record[A <: DomainEvent](source: Identifier, event: A) = behavior {
-    uow =>
-      val uncommitted = Uncommitted(source, event)
-      Accepted(uow.copy(uncommitted :: uow.events), uncommitted)
-  }
-
-  def load[AR <: AggregateRoot](factory: AggregateFactory[_], source: Identifier): Behavior[AR] = behavior {
-    uow =>
-      val events = uow.eventStore.load(source)
-      Accepted(uow, factory.loadFromHistory(events))
-  }
-
-  def guard(condition: Boolean, message: => String) =
-    if (condition) accept() else reject(message)
-}
-
-import Behaviors._
-
-trait Behavior[+A] {
-  def apply(uow: UnitOfWork): Reaction[A]
-
-  def map[B](f: A => B) = flatMap(a => accept(f(a)))
-
-  def flatMap[B](next: A => Behavior[B]) = behavior {uow =>
-    this(uow) match {
-      case Accepted(uow, result) => next(result)(uow)
-      case Rejected(message) => Rejected(message)
-    }
-  }
-
-  def andThen[B](next: Behavior[B]) = this flatMap (_ => next)
-}
+import behavior._
 
 trait EventSourced {
   def applyEvent: PartialFunction[Recorded[DomainEvent], EventSourced]

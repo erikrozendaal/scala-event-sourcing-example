@@ -1,6 +1,5 @@
 package com.zilverline.es2
 
-import events._
 import scala.collection.mutable.{Map => MMap}
 
 package object reports {

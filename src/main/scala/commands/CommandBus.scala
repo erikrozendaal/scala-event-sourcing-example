@@ -1,11 +1,10 @@
 package com.zilverline.es2
 package commands
 
-import domain._
+import behavior._
+import eventstore.EventStore
 
 import scala.collection.mutable.{Map => MMap}
-
-import events.storage.EventStore
 
 class CommandBus(eventStore: EventStore) {
   def send(command: Command) {

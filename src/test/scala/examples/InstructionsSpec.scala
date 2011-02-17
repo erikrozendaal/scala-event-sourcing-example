@@ -3,7 +3,6 @@ package examples
 
 import org.specs.Specification
 
-import events._
 import reports._
 
 case class InstructionAdded(text: String)
@@ -18,7 +17,7 @@ object InstructionsSpec extends Specification {
 
   val Source = newIdentifier
 
-  val eventStore = new storage.EventStore
+  val eventStore = new eventstore.EventStore
   val indexes = new Indexes
 
   indexes.add(InstructionIndex())

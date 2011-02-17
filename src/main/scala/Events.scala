@@ -1,5 +1,4 @@
 package com.zilverline.es2
-package events
 
 sealed trait Recorded[+A <: DomainEvent] {
   def source: Identifier

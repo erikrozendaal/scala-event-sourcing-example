@@ -3,10 +3,9 @@ package examples
 
 import org.specs.Specification
 
+import behavior._
 import commands._
-import commands.CommandHandler._
 import domain._
-import events._
 
 case class InvoiceItem(id: Int, description: String, amount: BigDecimal)
 
@@ -64,11 +63,9 @@ case class DraftInvoice(
 
 object InvoiceSpec extends Specification {
 
-  import domain.Behaviors._
-
   val invoiceId = newIdentifier
 
-  val eventStore = new storage.EventStore
+  val eventStore = new eventstore.EventStore
   val bus = new CommandBus(eventStore)
 
   bus.register(CommandHandler {
