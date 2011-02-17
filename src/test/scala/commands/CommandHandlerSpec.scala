@@ -20,7 +20,7 @@ object CommandHandlerSpec extends org.specs.Specification {
     "be able to save events" in {
       val result = subject(ExampleCommand("hello"))(UnitOfWork(Nil, null))
 
-      result must beEqualTo(Accepted(UnitOfWork(List(UncommittedEvent(AggregateIdentifier, ExampleEvent("content"))), null), UncommittedEvent(AggregateIdentifier, ExampleEvent("content"))))
+      result must beEqualTo(Accepted(UnitOfWork(List(Uncommitted(AggregateIdentifier, ExampleEvent("content"))), null), Uncommitted(AggregateIdentifier, ExampleEvent("content"))))
     }
   }
 }

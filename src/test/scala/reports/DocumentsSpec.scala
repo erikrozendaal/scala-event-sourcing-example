@@ -7,7 +7,7 @@ import org.specs.Specification
 
 case class ExampleDocument(content: String) extends Document {
   def applyEvent = {
-    case Payload(event: ExampleEvent) => copy(event.content)
+    case Event(event: ExampleEvent) => copy(event.content)
   }
 }
 
@@ -17,13 +17,13 @@ object DocumentsSpec extends Specification {
   val Source = newIdentifier
 
   def investigator: Investigator[ExampleEvent] = {
-    case CommittedEvent(_, payload: ExampleEvent) => ExampleDocument(payload.content)
+    case Committed(_, event: ExampleEvent) => ExampleDocument(event.content)
   }
 
   "Documents" should {
     subject.investigate(investigator)
     "generate specific documents based on initial event" in {
-      subject.update(CommittedEvent(Source, ExampleEvent("hello")))
+      subject.update(Committed(Source, ExampleEvent("hello")))
 
       subject.retrieve[ExampleDocument](Source) must beEqualTo(ExampleDocument("hello"))
     }
@@ -32,7 +32,7 @@ object DocumentsSpec extends Specification {
   "Specific documents" should {
     subject.store(Source, ExampleDocument("hello"))
     "be kept up-to-date of new events" in {
-      subject.update(CommittedEvent(Source, ExampleEvent("goodbye")))
+      subject.update(Committed(Source, ExampleEvent("goodbye")))
 
       subject.retrieve[ExampleDocument](Source) must beEqualTo(ExampleDocument("goodbye"))
     }

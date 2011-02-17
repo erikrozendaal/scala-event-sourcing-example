@@ -6,7 +6,7 @@ import events._
 import scala.collection._
 
 trait Document {
-  def applyEvent: CommittedEvent[AnyRef] => Document
+  def applyEvent: Committed[AnyRef] => Document
 }
 
 class Documents {
@@ -14,11 +14,11 @@ class Documents {
     investigators.put(m.erasure, investigator)
   }
 
-  def update(event: CommittedEvent[AnyRef]) {
+  def update(event: Committed[AnyRef]) {
     reports.get(event.source) foreach {
       report => reports.put(event.source, report.applyEvent(event))
     }
-    investigators.get(event.payload.getClass)
+    investigators.get(event.event.getClass)
       .flatMap(_.asInstanceOf[Investigator[AnyRef]].lift.apply(event))
       .foreach(report => reports.put(event.source, report))
   }

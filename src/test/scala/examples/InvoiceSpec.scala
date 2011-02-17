@@ -8,10 +8,9 @@ import commands.CommandHandler._
 import domain._
 import events._
 
-trait InvoiceEvent
-
 case class InvoiceItem(id: Int, description: String, amount: BigDecimal)
 
+trait InvoiceEvent
 case class InvoiceCreated() extends InvoiceEvent
 case class InvoiceRecipientChanged(recipient: Option[String]) extends InvoiceEvent
 case class InvoiceItemAdded(item: InvoiceItem, totalAmount: BigDecimal) extends InvoiceEvent
@@ -28,7 +27,9 @@ object Invoice extends AggregateFactory[Invoice] {
   private def applyCreated = handler {(id, event: InvoiceCreated) => DraftInvoice(id)}
 }
 
-sealed trait Invoice extends AggregateRoot
+sealed trait Invoice extends AggregateRoot {
+  type Event = InvoiceEvent
+}
 
 case class DraftInvoice(
   val id: Identifier,
@@ -86,20 +87,20 @@ object InvoiceSpec extends Specification {
     "be able to create invoice" in {
       bus.send(CreateInvoice(invoiceId))
 
-      eventStore.load(invoiceId) must contain(CommittedEvent(invoiceId, InvoiceCreated()))
+      eventStore.load(invoiceId) must contain(Committed(invoiceId, InvoiceCreated()))
     }
   }
 
   "new invoice" should {
-    eventStore.commit(Iterable(UncommittedEvent(invoiceId, InvoiceCreated())))
+    eventStore.commit(Iterable(Uncommitted(invoiceId, InvoiceCreated())))
     "allow items to be added" in {
       bus.send(AddInvoiceItem(invoiceId, "beverage", 2.95))
       bus.send(AddInvoiceItem(invoiceId, "sandwich", 4.95))
 
       eventStore.load(invoiceId) must contain(
-        CommittedEvent(invoiceId, InvoiceItemAdded(InvoiceItem(1, "beverage", 2.95), 2.95)))
+        Committed(invoiceId, InvoiceItemAdded(InvoiceItem(1, "beverage", 2.95), 2.95)))
       eventStore.load(invoiceId) must contain(
-        CommittedEvent(invoiceId, InvoiceItemAdded(InvoiceItem(2, "sandwich", 4.95), 7.90)))
+        Committed(invoiceId, InvoiceItemAdded(InvoiceItem(2, "sandwich", 4.95), 7.90)))
     }
   }
 }

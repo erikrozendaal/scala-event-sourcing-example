@@ -3,8 +3,8 @@ package domain
 
 import events._
 
-case class UnitOfWork(events: List[UncommittedEvent[DomainEvent]], eventStore: storage.EventStore) {
-  def record(aggregate: Identifier, event: DomainEvent) = copy(UncommittedEvent(aggregate, event) :: events)
+case class UnitOfWork(events: List[Uncommitted[DomainEvent]], eventStore: storage.EventStore) {
+  def record(aggregate: Identifier, event: DomainEvent) = copy(Uncommitted(aggregate, event) :: events)
 }
 
 trait Reaction[+T]
@@ -22,11 +22,11 @@ object Behaviors {
 
   def record[A <: DomainEvent](source: Identifier, event: A) = behavior {
     uow =>
-      val uncommitted = UncommittedEvent(source, event)
+      val uncommitted = Uncommitted(source, event)
       Accepted(uow.copy(uncommitted :: uow.events), uncommitted)
   }
 
-  def load[T <: AggregateRoot](factory: AggregateFactory[_], source: Identifier): Behavior[T] = behavior {
+  def load[AR <: AggregateRoot](factory: AggregateFactory[_], source: Identifier): Behavior[AR] = behavior {
     uow =>
       val events = uow.eventStore.load(source)
       Accepted(uow, factory.loadFromHistory(events))
@@ -54,59 +54,64 @@ trait Behavior[+A] {
 }
 
 trait EventSourced {
-  def applyEvent: PartialFunction[RecordedEvent[DomainEvent], EventSourced]
+  def applyEvent: PartialFunction[Recorded[DomainEvent], EventSourced]
 }
 
 trait AggregateRoot extends EventSourced {
+  type Event <: DomainEvent
+
   protected def id: Identifier
 
-  protected class EventHandler[Event <: DomainEvent, +Result](callback: RecordedEvent[Event] => Result) {
-    def apply(event: Event) = record(id, event) flatMap (recorded => accept(callback(recorded)))
+  protected class EventHandler[A <: DomainEvent, +B](callback: Recorded[A] => B) {
+    def apply(event: A) = record(id, event) flatMap (recorded => accept(callback(recorded)))
 
-    def applyFromHistory(event: RecordedEvent[Event]) = callback(event)
+    def applyFromHistory(event: Recorded[A]) = callback(event)
   }
 
-  protected def handler[A <: DomainEvent, B](callback: A => B) = new EventHandler((recorded: RecordedEvent[A]) => callback(recorded.payload))
+  protected def handler[A <: Event, B](callback: A => B) = new EventHandler({
+    recorded: Recorded[A] => callback(recorded.event)
+  })
 
-  protected def unhandled = handler {event: AnyRef =>
+  protected def unhandled = new EventHandler({event: DomainEvent =>
     error("unhandled event " + event + " for " + this)
-  }
+  })
 
   implicit protected def handlerToPartialFunction[A <: DomainEvent, B](handler: EventHandler[A, B])(implicit m: Manifest[A]) =
-    new PartialFunction[RecordedEvent[DomainEvent], B] {
-      def apply(event: RecordedEvent[DomainEvent]) =
-        if (isDefinedAt(event)) handler.applyFromHistory(event.asInstanceOf[RecordedEvent[A]])
-        else unhandled.applyFromHistory(event)
+    new PartialFunction[Recorded[DomainEvent], B] {
+      def apply(recorded: Recorded[DomainEvent]) =
+        if (isDefinedAt(recorded)) handler.applyFromHistory(recorded.asInstanceOf[Recorded[A]])
+        else unhandled.applyFromHistory(recorded)
 
-      def isDefinedAt(event: RecordedEvent[DomainEvent]) = m.erasure.isInstance(event.payload)
+      def isDefinedAt(recorded: Recorded[DomainEvent]) = m.erasure.isInstance(recorded.event)
     }
 }
 
 trait AggregateFactory[AR <: AggregateRoot] extends EventSourced {
-  protected class EventHandler[Event <: DomainEvent, +Result](callback: RecordedEvent[Event] => Result) {
-    def apply(source: Identifier, event: Event) = record(source, event) flatMap (recorded => accept(callback(recorded)))
+  protected class EventHandler[A <: DomainEvent, +B](callback: Recorded[A] => B) {
+    def apply(source: Identifier, event: A) = record(source, event) flatMap (recorded => accept(callback(recorded)))
 
-    def applyFromHistory(event: RecordedEvent[Event]) = callback(event)
+    def applyFromHistory(event: Recorded[A]) = callback(event)
   }
 
-  protected def handler[A <: DomainEvent, B](callback: (Identifier, A) => B) = new EventHandler({
-    recorded: RecordedEvent[A] => callback(recorded.source, recorded.payload)
+  protected def handler[A <: AR#Event, B](callback: (Identifier, A) => B) = new EventHandler({
+    recorded: Recorded[A] => callback(recorded.source, recorded.event)
   })
 
-  protected def unhandled = handler {(source: Identifier, event: DomainEvent) =>
-    error("unhandled event " + event + " for " + source + " using factory " + this)
-  }
+  protected def unhandled = new EventHandler[DomainEvent, Nothing]({
+    event =>
+      error("unhandled event " + event + " for " + this)
+  })
 
   implicit protected def handlerToPartialFunction[A <: DomainEvent, B](handler: EventHandler[A, B])(implicit m: Manifest[A]) =
-    new PartialFunction[RecordedEvent[DomainEvent], B] {
-      def apply(event: RecordedEvent[DomainEvent]) =
-        if (isDefinedAt(event)) handler.applyFromHistory(event.asInstanceOf[RecordedEvent[A]])
+    new PartialFunction[Recorded[DomainEvent], B] {
+      def apply(event: Recorded[DomainEvent]) =
+        if (isDefinedAt(event)) handler.applyFromHistory(event.asInstanceOf[Recorded[A]])
         else unhandled.applyFromHistory(event)
 
-      def isDefinedAt(event: RecordedEvent[DomainEvent]) = m.erasure.isInstance(event.payload)
+      def isDefinedAt(event: Recorded[DomainEvent]) = m.erasure.isInstance(event.event)
     }
 
-  def loadFromHistory[T <: AR](history: Iterable[CommittedEvent[DomainEvent]]): T = {
+  def loadFromHistory[T <: AR](history: Iterable[Committed[DomainEvent]]): T = {
     val aggregate = applyEvent(history.head)
     (aggregate /: history.tail)(_.applyEvent(_)).asInstanceOf[T]
   }

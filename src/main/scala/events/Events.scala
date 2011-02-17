@@ -1,14 +1,14 @@
 package com.zilverline.es2
 package events
 
-sealed trait RecordedEvent[+A <: DomainEvent] {
+sealed trait Recorded[+A <: DomainEvent] {
   def source: Identifier
-  def payload: A
+  def event: A
 }
 
-case class CommittedEvent[+A <: DomainEvent](source: Identifier, payload: A) extends RecordedEvent[A]
-case class UncommittedEvent[+A <: DomainEvent](source: Identifier, payload: A) extends RecordedEvent[A]
+case class Committed[+A <: DomainEvent](source: Identifier, event: A) extends Recorded[A]
+case class Uncommitted[+A <: DomainEvent](source: Identifier, event: A) extends Recorded[A]
 
-object Payload {
-  def unapply[A <: DomainEvent](event: RecordedEvent[A]): Option[A] = Some(event.payload)
+object Event {
+  def unapply[A <: DomainEvent](recorded: Recorded[A]): Option[A] = Some(recorded.event)
 }

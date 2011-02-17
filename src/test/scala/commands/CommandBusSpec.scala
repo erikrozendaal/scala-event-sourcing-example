@@ -50,7 +50,7 @@ object CommandBusSpec extends org.specs.Specification {
     "commit accepted unit of work" in {
       subject.send(ExampleCommand("hello"))
 
-      eventStore.load(Source) must contain(CommittedEvent(Source, ExampleEvent("hello")))
+      eventStore.load(Source) must contain(Committed(Source, ExampleEvent("hello")))
     }
 
     "rollback rejected unit of work" in {

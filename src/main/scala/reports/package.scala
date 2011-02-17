@@ -5,10 +5,10 @@ import scala.collection.mutable.{Map => MMap}
 
 package object reports {
 
-  type Investigator[T <: DomainEvent] = CommittedEvent[T] PartialFunction Document
+  type Investigator[T <: DomainEvent] = Committed[T] PartialFunction Document
 
   trait Index {
-    def applyEvent: CommittedEvent[AnyRef] => Index
+    def applyEvent: Committed[AnyRef] => Index
   }
 
   class Indexes {
@@ -18,7 +18,7 @@ package object reports {
 
     def get[T <: Index](implicit m: Manifest[T]): T = indexes(m.erasure).asInstanceOf[T]
 
-    def process(event: CommittedEvent[AnyRef]) {
+    def process(event: Committed[AnyRef]) {
       indexes transform ((_, index) => index.applyEvent(event))
     }
 

@@ -10,7 +10,7 @@ case class InstructionAdded(text: String)
 
 case class InstructionIndex(instructions: List[String] = List.empty) extends Index {
   def applyEvent = {
-    case Payload(event: InstructionAdded) => copy(event.text :: instructions)
+    case Event(event: InstructionAdded) => copy(event.text :: instructions)
   }
 }
 
@@ -27,7 +27,7 @@ object InstructionsSpec extends Specification {
 
   "instruction" should {
     "show up in index when added" in {
-      eventStore.commit(Iterable(UncommittedEvent(Source, InstructionAdded("hello"))))
+      eventStore.commit(Iterable(Uncommitted(Source, InstructionAdded("hello"))))
 
       indexes.get[InstructionIndex].instructions must contain("hello")
     }

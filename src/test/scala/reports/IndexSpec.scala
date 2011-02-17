@@ -18,7 +18,7 @@ object IndexSpec extends Specification {
     subject.add(ExampleIndex(0))
 
     "receive all events" in {
-      subject.process(CommittedEvent(Source, ExampleEvent("hello")))
+      subject.process(Committed(Source, ExampleEvent("hello")))
 
       subject.get[ExampleIndex].count must beEqualTo(1)
     }
