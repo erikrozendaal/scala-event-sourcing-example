@@ -3,6 +3,8 @@ package commands
 
 object CommandBusSpec extends org.specs.Specification {
 
+  import domain._
+  import domain.Behaviors._
   import events._
   import events.storage._
   import CommandHandler._
@@ -21,7 +23,7 @@ object CommandBusSpec extends org.specs.Specification {
   "command bus with handlers" should {
     var handlerInvoked = false
 
-    def testHandler = handler {command: ExampleCommand => handlerInvoked = true; CommandHandler.accept}
+    def testHandler = CommandHandler {command: ExampleCommand => handlerInvoked = true; Behaviors.accept()}
     subject.register(testHandler)
 
     "invoke handler based on command type" in {
@@ -36,19 +38,19 @@ object CommandBusSpec extends org.specs.Specification {
   }
 
   "command bus" should {
-    subject.register(handler {
+    subject.register(CommandHandler {
       command: ExampleCommand =>
-        save(Source, ExampleEvent(command.content)) andThen CommandHandler.accept
+        record(Source, ExampleEvent(command.content)) andThen Behaviors.accept()
     })
-    subject.register(handler {
+    subject.register(CommandHandler {
       command: AnotherCommand =>
-        save(Source, ExampleEvent(command.content)) andThen CommandHandler.reject
+        record(Source, ExampleEvent(command.content)) andThen Behaviors.reject("failed")
     })
 
     "commit accepted unit of work" in {
       subject.send(ExampleCommand("hello"))
 
-      eventStore.load(Source) must contain(ExampleEvent("hello"))
+      eventStore.load(Source) must contain(CommittedEvent(Source, ExampleEvent("hello")))
     }
 
     "rollback rejected unit of work" in {

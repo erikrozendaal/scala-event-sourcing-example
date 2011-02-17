@@ -27,7 +27,7 @@ object InstructionsSpec extends Specification {
 
   "instruction" should {
     "show up in index when added" in {
-      eventStore.commit(Source, InstructionAdded("hello"))
+      eventStore.commit(Iterable(UncommittedEvent(Source, InstructionAdded("hello"))))
 
       indexes.get[InstructionIndex].instructions must contain("hello")
     }

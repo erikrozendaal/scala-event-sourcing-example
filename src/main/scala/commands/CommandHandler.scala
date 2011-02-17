@@ -1,37 +1,21 @@
 package com.zilverline.es2
 package commands
 
+import domain._
 import events._
 
-sealed trait UnitOfWork
-case object Empty extends UnitOfWork
-case object Rejected extends UnitOfWork
-case class Accepted(aggregate: Identifier, event: AnyRef) extends UnitOfWork
-
-object UnitOfWork {
-  def empty = Empty
-}
-
-abstract class CommandHandler[T <: Command](implicit m: Manifest[T]) extends (T => Transaction) {
+abstract class CommandHandler[T <: Command, R](implicit m: Manifest[T]) extends (T => Behavior[R]) {
   def commandType: Class[_] = m.erasure
   def invokeWithCommand(command: Command) = apply(command.asInstanceOf[T])
 }
 
 object CommandHandler {
 
-  def transaction(callback: UnitOfWork => UnitOfWork) = callback
+  type Transaction[T] = Behavior[T]
 
-  def handler[T <: Command](callback: T => Transaction)(implicit m: Manifest[T]) = new CommandHandler[T] {
+  def transaction[T](callback: Behavior[T]) = callback
+
+  def apply[T <: Command, R](callback: T => Behavior[R])(implicit m: Manifest[T]) = new CommandHandler[T, R] {
     def apply(command: T) = callback(command)
   }
-
-  def save(aggregate: Identifier, event: AnyRef) = transaction {
-    case Empty => Accepted(aggregate, event)
-    case Accepted(_, _) => error("cannot change multiple aggregates in single transaction")
-    case Rejected => Rejected
-  }
-
-  def accept = transaction(identity)
-
-  def reject = transaction(_ => Rejected)
 }

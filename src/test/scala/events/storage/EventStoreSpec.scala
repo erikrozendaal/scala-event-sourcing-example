@@ -15,24 +15,27 @@ object EventStoreSpec extends Specification {
 
   "event store" should {
     "save single event" in {
-      subject.commit(StreamA, ExampleEvent("example"))
+      subject.commit(Iterable(UncommittedEvent(StreamA, ExampleEvent("example"))))
 
-      subject.load(StreamA) must beEqualTo(Seq(ExampleEvent("example")))
+      subject.load(StreamA) must beEqualTo(Seq(
+        CommittedEvent(StreamA, ExampleEvent("example"))))
     }
 
     "save multiple events" in {
-      subject.commit(StreamA, ExampleEvent("first"))
-      subject.commit(StreamA, ExampleEvent("second"))
+      subject.commit(Iterable(UncommittedEvent(StreamA, ExampleEvent("first"))))
+      subject.commit(Iterable(UncommittedEvent(StreamA, ExampleEvent("second"))))
 
-      subject.load(StreamA) must beEqualTo(Seq(ExampleEvent("first"), ExampleEvent("second")))
+      subject.load(StreamA) must beEqualTo(Seq(
+        CommittedEvent(StreamA, ExampleEvent("first")),
+        CommittedEvent(StreamA, ExampleEvent("second"))))
     }
 
     "save multiple events to different sources" in {
-      subject.commit(StreamA, ExampleEvent("a"))
-      subject.commit(StreamB, ExampleEvent("b"))
+      subject.commit(Iterable(UncommittedEvent(StreamA, ExampleEvent("a"))))
+      subject.commit(Iterable(UncommittedEvent(StreamB, ExampleEvent("b"))))
 
-      subject.load(StreamA) must beEqualTo(Seq(ExampleEvent("a")))
-      subject.load(StreamB) must beEqualTo(Seq(ExampleEvent("b")))
+      subject.load(StreamA) must beEqualTo(Seq(CommittedEvent(StreamA, ExampleEvent("a"))))
+      subject.load(StreamB) must beEqualTo(Seq(CommittedEvent(StreamB, ExampleEvent("b"))))
     }
   }
 
@@ -47,7 +50,7 @@ object EventStoreSpec extends Specification {
     subject.addListener(listener)
 
     "dispatch saved events to listener" in {
-      subject.commit(StreamA, ExampleEvent("example"))
+      subject.commit(Iterable(UncommittedEvent(StreamA, ExampleEvent("example"))))
 
       received must beEqualTo(Seq(StreamA -> ExampleEvent("example")))
     }
@@ -55,7 +58,7 @@ object EventStoreSpec extends Specification {
     "support multiple listeners" in {
       subject.addListener(listener)
 
-      subject.commit(StreamA, ExampleEvent("example"))
+      subject.commit(Iterable(UncommittedEvent(StreamA, ExampleEvent("example"))))
 
       received must beEqualTo(Seq(StreamA -> ExampleEvent("example"), StreamA -> ExampleEvent("example")))
     }

@@ -6,19 +6,22 @@ import scala.collection._
 import events._
 
 class EventStore {
-  type EventStoreListener = CommittedEvent => Unit
+  type EventStoreListener = CommittedEvent[DomainEvent] => Unit
 
-  def commit(source: Identifier, event: AnyRef) {
-    storedEvents.getOrElseUpdate(source, mutable.Queue()) += event;
-    listeners foreach {callback => callback(CommittedEvent(source, event))}
+  def commit(events: Iterable[UncommittedEvent[DomainEvent]]) {
+    for (event <- events) {
+      val committed = CommittedEvent(event.source, event.payload)
+      storedEvents.getOrElseUpdate(event.source, mutable.Queue()) += committed;
+      listeners foreach {callback => callback(committed)}
+    }
   }
 
-  def load(source: Identifier): Iterable[Any] = storedEvents.getOrElse(source, Iterable.empty)
+  def load(source: Identifier): Iterable[CommittedEvent[DomainEvent]] = storedEvents.getOrElse(source, Iterable.empty)
 
   def addListener(callback: EventStoreListener) {
     listeners += callback;
   }
 
-  private val storedEvents: mutable.Map[Identifier, mutable.Queue[Any]] = mutable.Map()
+  private val storedEvents: mutable.Map[Identifier, mutable.Queue[CommittedEvent[DomainEvent]]] = mutable.Map()
   private val listeners: mutable.Queue[EventStoreListener] = mutable.Queue()
 }

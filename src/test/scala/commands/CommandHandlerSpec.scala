@@ -5,20 +5,22 @@ import events._
 
 object CommandHandlerSpec extends org.specs.Specification {
 
+  import domain._
+  import domain.Behaviors._
   import CommandHandler._
 
   val AggregateIdentifier = newIdentifier
 
-  def subject = handler {
+  def subject = CommandHandler {
     command: ExampleCommand =>
-      save(AggregateIdentifier, ExampleEvent("content"))
+      record(AggregateIdentifier, ExampleEvent("content"))
   }
 
   "command handler" should {
     "be able to save events" in {
-      val result = subject(ExampleCommand("hello"))(UnitOfWork.empty)
+      val result = subject(ExampleCommand("hello"))(UnitOfWork(Nil, null))
 
-      result must beEqualTo(Accepted(AggregateIdentifier, ExampleEvent("content")))
+      result must beEqualTo(Accepted(UnitOfWork(List(UncommittedEvent(AggregateIdentifier, ExampleEvent("content"))), null), UncommittedEvent(AggregateIdentifier, ExampleEvent("content"))))
     }
   }
 }

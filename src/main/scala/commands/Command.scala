@@ -1,9 +1,8 @@
 package com.zilverline.es2
+package commands
 
-package commands {
-  import events._
+import events._
 
-  trait Command {
-    val commandId = newIdentifier
-  }
+trait Command {
+  val commandId = newIdentifier
 }

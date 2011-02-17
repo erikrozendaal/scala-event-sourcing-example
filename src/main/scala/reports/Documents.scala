@@ -6,15 +6,15 @@ import events._
 import scala.collection._
 
 trait Document {
-  def applyEvent: CommittedEvent => Document
+  def applyEvent: CommittedEvent[AnyRef] => Document
 }
 
 class Documents {
-  def investigate[T](investigator: Investigator[T])(implicit m: Manifest[T]) {
+  def investigate[T <: DomainEvent](investigator: Investigator[T])(implicit m: Manifest[T]) {
     investigators.put(m.erasure, investigator)
   }
 
-  def update(event: CommittedEvent) {
+  def update(event: CommittedEvent[AnyRef]) {
     reports.get(event.source) foreach {
       report => reports.put(event.source, report.applyEvent(event))
     }
