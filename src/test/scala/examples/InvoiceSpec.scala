@@ -23,7 +23,7 @@ object Invoice extends AggregateFactory[Invoice] {
 
   def applyEvent = applyCreated
 
-  private def applyCreated = handler {(id, event: InvoiceCreated) => DraftInvoice(id)}
+  private def applyCreated = handler {id => (_: InvoiceCreated) => DraftInvoice(id)}
 }
 
 sealed trait Invoice extends AggregateRoot {
@@ -67,6 +67,7 @@ object InvoiceSpec extends Specification {
 
   val eventStore = new eventstore.EventStore
   val bus = new CommandBus(eventStore)
+//  val documents = new Documents(eventStore)
 
   bus.register(CommandHandler {
     command: CreateInvoice => Invoice.create(command.invoiceId)

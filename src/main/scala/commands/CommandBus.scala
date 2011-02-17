@@ -15,7 +15,7 @@ class CommandBus(eventStore: EventStore) {
     }
   }
 
-  def register[T <: Command](handler: CommandHandler[T, _]) = {
+  def register[T <: Command](handler: CommandHandler[T, _]) {
     handlers.put(handler.commandType, handler)
   }
 
