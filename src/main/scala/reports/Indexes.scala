@@ -12,7 +12,7 @@ class Indexes {
 
   def get[T <: Index](implicit m: Manifest[T]): T = indexes(m.erasure).asInstanceOf[T]
 
-  def process(event: Committed[DomainEvent]) {
+  def process(event: CommittedEvent) {
     indexes transform ((_, index) => index.applyEvent(event))
   }
 

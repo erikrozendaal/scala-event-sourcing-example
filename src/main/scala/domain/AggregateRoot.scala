@@ -4,7 +4,7 @@ package domain
 import behavior._
 
 trait EventSourced {
-  def applyEvent: PartialFunction[Committed[DomainEvent], EventSourced]
+  def applyEvent: PartialFunction[CommittedEvent, EventSourced]
 }
 
 trait AggregateRoot extends EventSourced {
@@ -25,12 +25,12 @@ trait AggregateRoot extends EventSourced {
   }
 
   implicit protected def handlerToPartialFunction[A <: DomainEvent, B](handler: EventHandler[A, B])(implicit m: Manifest[A]) =
-    new PartialFunction[Committed[DomainEvent], B] {
-      def apply(committed: Committed[DomainEvent]) =
+    new PartialFunction[CommittedEvent, B] {
+      def apply(committed: CommittedEvent) =
         if (isDefinedAt(committed)) handler.applyFromHistory(committed.asInstanceOf[Committed[A]])
         else error("unhandled event " + committed + " for " + this)
 
-      def isDefinedAt(committed: Committed[DomainEvent]) = m.erasure.isInstance(committed.event)
+      def isDefinedAt(committed: CommittedEvent) = m.erasure.isInstance(committed.event)
     }
 }
 
@@ -46,15 +46,15 @@ trait AggregateFactory[AR <: AggregateRoot] extends EventSourced {
   })
 
   implicit protected def handlerToPartialFunction[A <: DomainEvent, B](handler: EventHandler[A, B])(implicit m: Manifest[A]) =
-    new PartialFunction[Committed[DomainEvent], B] {
-      def apply(committed: Committed[DomainEvent]) =
+    new PartialFunction[CommittedEvent, B] {
+      def apply(committed: CommittedEvent) =
         if (isDefinedAt(committed)) handler.applyFromHistory(committed.asInstanceOf[Committed[A]])
         else error("unhandled event " + committed + " for " + this)
 
-      def isDefinedAt(committed: Committed[DomainEvent]) = m.erasure.isInstance(committed.event)
+      def isDefinedAt(committed: CommittedEvent) = m.erasure.isInstance(committed.event)
     }
 
-  def loadFromHistory[T <: AR](history: Iterable[Committed[DomainEvent]]): T = {
+  def loadFromHistory[T <: AR](history: Iterable[CommittedEvent]): T = {
     val aggregate = applyEvent(history.head)
     (aggregate /: history.tail)(_.applyEvent(_)).asInstanceOf[T]
   }

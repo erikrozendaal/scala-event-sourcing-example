@@ -1,7 +1,7 @@
 package com.zilverline.es2
 package behavior
 
-case class UnitOfWork(events: List[Uncommitted[DomainEvent]], eventStore: eventstore.EventStore) {
+case class UnitOfWork(events: List[UncommittedEvent], eventStore: eventstore.EventStore) {
   def record(aggregate: Identifier, event: DomainEvent) = copy(Uncommitted(aggregate, event) :: events)
 }
 

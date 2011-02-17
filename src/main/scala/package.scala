@@ -8,4 +8,8 @@ package object es2 {
   def newIdentifier: Identifier = UUID.randomUUID
 
   type DomainEvent = AnyRef
+
+  type RecordedEvent = Recorded[DomainEvent]
+  type UncommittedEvent = Uncommitted[DomainEvent]
+  type CommittedEvent = Committed[DomainEvent]
 }
