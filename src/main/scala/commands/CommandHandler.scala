@@ -3,7 +3,8 @@ package commands
 
 import behavior._
 
-abstract class CommandHandler[T <: Command, R](implicit m: Manifest[T]) extends (T => Behavior[R]) {
+abstract class CommandHandler[T <: Command, R](implicit m: Manifest[T]) {
+  def apply(command: T): Behavior[R]
   def commandType: Class[_] = m.erasure
   def invokeWithCommand(command: Command) = apply(command.asInstanceOf[T])
 }

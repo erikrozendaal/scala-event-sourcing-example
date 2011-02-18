@@ -55,7 +55,7 @@ trait AggregateFactory[AR <: AggregateRoot] extends EventSourced {
     }
 
   def loadFromHistory[T <: AR](history: Iterable[CommittedEvent]): T = {
-    val aggregate = applyEvent(history.head)
+    var aggregate = applyEvent(history.head)
     (aggregate /: history.tail)(_.applyEvent(_)).asInstanceOf[T]
   }
 }

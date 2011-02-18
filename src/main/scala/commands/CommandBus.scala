@@ -19,5 +19,9 @@ class CommandBus(eventStore: EventStore) {
     handlers.put(handler.commandType, handler)
   }
 
+  def register[T <: Command, R](handler: T => Behavior[R])(implicit m : Manifest[T]) {
+    register(CommandHandler(handler))
+  }
+
   private val handlers: MMap[Class[_], CommandHandler[_, _]] = MMap.empty
 }

@@ -18,6 +18,10 @@ case class CreateInvoice(invoiceId: Identifier) extends Command
 case class ChangeInvoiceRecipient(invoiceId: Identifier, recipient: Option[String]) extends Command
 case class AddInvoiceItem(invoiceId: Identifier, description: String, price: BigDecimal) extends Command
 
+sealed trait Invoice extends AggregateRoot {
+  type Event = InvoiceEvent
+}
+
 object Invoice extends AggregateFactory[Invoice] {
   def create(invoiceId: Identifier) = applyCreated(invoiceId, InvoiceCreated())
 
@@ -26,16 +30,12 @@ object Invoice extends AggregateFactory[Invoice] {
   private def applyCreated = handler {id => (_: InvoiceCreated) => DraftInvoice(id)}
 }
 
-sealed trait Invoice extends AggregateRoot {
-  type Event = InvoiceEvent
-}
-
 case class DraftInvoice(
   val id: Identifier,
   recipient_? : Boolean = false,
   nextItemId: Int = 1,
-  items: Map[Int, InvoiceItem] = Map.empty)
-  extends Invoice {
+  items: Map[Int, InvoiceItem] = Map.empty
+) extends Invoice {
 
   def changeRecipient(recipient: Option[String]): Behavior[DraftInvoice] = {
     applyRecipientChanged(InvoiceRecipientChanged(recipient.map(_.trim).filter(_.nonEmpty)))
@@ -66,24 +66,24 @@ object InvoiceSpec extends Specification {
   val invoiceId = newIdentifier
 
   val eventStore = new eventstore.EventStore
-  val bus = new CommandBus(eventStore)
+  val commands = new CommandBus(eventStore)
 //  val documents = new Documents(eventStore)
 
-  bus.register(CommandHandler {
+  commands register {
     command: CreateInvoice => Invoice.create(command.invoiceId)
-  })
-  bus.register(CommandHandler {
+  }
+  commands register {
     command: ChangeInvoiceRecipient =>
-      load[DraftInvoice](Invoice, command.invoiceId) flatMap (_.changeRecipient(command.recipient))
-  })
-  bus.register(CommandHandler {
+      load[DraftInvoice](command.invoiceId)(Invoice) flatMap (_.changeRecipient(command.recipient))
+  }
+  commands register {
     command: AddInvoiceItem =>
-      load[DraftInvoice](Invoice, command.invoiceId) flatMap (_.addItem(command.description, command.price))
-  })
+      load[DraftInvoice](command.invoiceId)(Invoice) flatMap (_.addItem(command.description, command.price))
+  }
 
   "client" should {
     "be able to create invoice" in {
-      bus.send(CreateInvoice(invoiceId))
+      commands.send(CreateInvoice(invoiceId))
 
       eventStore.load(invoiceId) must contain(Committed(invoiceId, InvoiceCreated()))
     }
@@ -92,8 +92,8 @@ object InvoiceSpec extends Specification {
   "new invoice" should {
     eventStore.commit(Iterable(Uncommitted(invoiceId, InvoiceCreated())))
     "allow items to be added" in {
-      bus.send(AddInvoiceItem(invoiceId, "beverage", 2.95))
-      bus.send(AddInvoiceItem(invoiceId, "sandwich", 4.95))
+      commands.send(AddInvoiceItem(invoiceId, "beverage", 2.95))
+      commands.send(AddInvoiceItem(invoiceId, "sandwich", 4.95))
 
       eventStore.load(invoiceId) must contain(
         Committed(invoiceId, InvoiceItemAdded(InvoiceItem(1, "beverage", 2.95), 2.95)))
