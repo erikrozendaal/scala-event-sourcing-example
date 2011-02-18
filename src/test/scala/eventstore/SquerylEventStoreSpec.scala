@@ -15,33 +15,28 @@ object Test {
 
     Class.forName(jdbcDriver)
 
-    SessionFactory.concreteFactory = Some(()=>
-      Session.create(
-        java.sql.DriverManager.getConnection(jdbcUrl),
-        new H2Adapter))
+    SessionFactory.concreteFactory = Some {
+      () =>
+        val result = Session.create(java.sql.DriverManager.getConnection(jdbcUrl), new H2Adapter)
+        result.setLogger(println)
+        result
+    }
 
-
-    try {
-      transaction {
-        Session.currentSession.setLogger(println)
-        SquerylEventStore.create
-      }
-    } catch {
-      case exception => println(exception)
+    transaction {
+      SquerylEventStore.create
     }
   }
 
   def insertAndSelect {
     transaction {
-      Session.currentSession.setLogger(println)
-      implicit val formats = DefaultFormats
+      implicit val formats = Serialization.formats(ShortTypeHints(List(classOf[ExampleEvent])))
       val example = ExampleEvent("example")
       val json = write(example)
-      val inserted = SquerylEventStore.events.insert(EventRecord(123, newIdentifier.toString, json))
-      val e: Iterable[EventRecord] = from(SquerylEventStore.events)(event => select(event))
-      for (ev <- e) {
+      val inserted = SquerylEventStore.EventRecords.insert(EventRecord(123, newIdentifier.toString, json))
+      val records = from(SquerylEventStore.EventRecords)(select(_))
+      for (ev <- records) {
         println(ev)
-        println(read[ExampleEvent](ev.event))
+        println(read[DomainEvent](ev.event))
       }
     }
   }

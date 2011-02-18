@@ -9,7 +9,7 @@ object EventStoreSpec extends Specification {
   val StreamA = newIdentifier
   val StreamB = newIdentifier
 
-  val subject = new EventStore
+  val subject = new MemoryEventStore
 
   "event store" should {
     "save single event" in {

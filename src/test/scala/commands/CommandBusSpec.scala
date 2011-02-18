@@ -4,11 +4,10 @@ package commands
 object CommandBusSpec extends org.specs.Specification {
 
   import behavior._
-  import eventstore.EventStore
 
   val Source = newIdentifier
 
-  val eventStore = new EventStore
+  val eventStore = new eventstore.MemoryEventStore
   val subject = new CommandBus(eventStore)
 
   "command bus without handlers" should {

@@ -17,7 +17,7 @@ object InstructionsSpec extends Specification {
 
   val Source = newIdentifier
 
-  val eventStore = new eventstore.EventStore
+  val eventStore = new eventstore.MemoryEventStore
   val indexes = new Indexes
 
   indexes.add(InstructionIndex())

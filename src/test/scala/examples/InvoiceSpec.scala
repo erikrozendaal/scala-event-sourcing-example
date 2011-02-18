@@ -65,7 +65,7 @@ object InvoiceSpec extends Specification {
 
   val invoiceId = newIdentifier
 
-  val eventStore = new eventstore.EventStore
+  val eventStore = new eventstore.MemoryEventStore
   val commands = new CommandBus(eventStore)
 //  val documents = new Documents(eventStore)
 

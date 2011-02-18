@@ -9,7 +9,7 @@ case class EventRecord(id: Long, aggregate: String, event: String) {
 }
 
 object SquerylEventStore extends Schema {
-  val events = table[EventRecord]("events")
+  val EventRecords = table[EventRecord]("event_records")
 }
 
 class SquerylEventStore {

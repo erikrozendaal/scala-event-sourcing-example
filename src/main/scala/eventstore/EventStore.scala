@@ -3,8 +3,14 @@ package eventstore
 
 import scala.collection._
 
-class EventStore {
+trait EventStore {
   type EventStoreListener = CommittedEvent => Unit
+  def commit(events: Iterable[UncommittedEvent])
+  def load(source: Identifier): Iterable[CommittedEvent]
+  def addListener(callback: EventStoreListener)
+}
+
+class MemoryEventStore extends EventStore {
 
   def commit(events: Iterable[UncommittedEvent]) {
     for (event <- events) {
