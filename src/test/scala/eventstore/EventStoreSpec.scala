@@ -4,12 +4,12 @@ package eventstore
 import scala.collection._
 import org.specs.Specification
 
-object EventStoreSpec extends Specification {
+abstract class EventStoreSpec extends Specification {
 
   val StreamA = newIdentifier
   val StreamB = newIdentifier
 
-  val subject = new MemoryEventStore
+  val subject: EventStore
 
   "event store" should {
     "save single event" in {

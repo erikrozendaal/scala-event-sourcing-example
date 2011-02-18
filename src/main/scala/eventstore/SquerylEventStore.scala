@@ -5,14 +5,16 @@ import java.util.UUID
 import org.squeryl._
 import org.squeryl.PrimitiveTypeMode._
 
-case class EventRecord(id: Long, aggregate: String, event: String) extends KeyedEntity[Long] {
+case class EventRecord(id: Long, source: String, event: String) extends KeyedEntity[Long] {
   def this() = this(0, "", "")
 }
 
 object SquerylEventStore extends Schema {
   val EventRecords = table[EventRecord]("event_records")
 
-  on(EventRecords)(t => declare(t.event is(dbType("varchar"))))
+  on(EventRecords)(t => declare(
+    t.source is(indexed, dbType("varchar(36)")),
+    t.event is(dbType("varchar"))))
 }
 
 class SquerylEventStore(serializer: Serializer) extends EventStore {
@@ -21,11 +23,13 @@ class SquerylEventStore(serializer: Serializer) extends EventStore {
   private def write = serializer.serialize _
   private def read = serializer.deserialize _
 
+  implicit def stringToIdentifier(s: String): Identifier = UUID.fromString(s)
+  implicit def identifierToString(identifier: Identifier): String = identifier.toString
+
   def commit(events: Iterable[UncommittedEvent]) {
     transaction {
-      for (uncommitted <- events) {
-        EventRecords.insert(EventRecord(0, uncommitted.source.toString, write(uncommitted.event)))
-      }
+      val records = events map (uncommitted => EventRecord(0, uncommitted.source, write(uncommitted.event)))
+      EventRecords.insert(records)
     }
     for {listener <- listeners; uncommitted <- events} {
       listener(Committed(uncommitted.source, uncommitted.event))
@@ -33,8 +37,8 @@ class SquerylEventStore(serializer: Serializer) extends EventStore {
   }
 
   def load(source: Identifier): Iterable[CommittedEvent] = transaction {
-    val records = from(EventRecords)(r => where(r.aggregate === source.toString).select(r))
-    for (record <- records) yield Committed(UUID.fromString(record.aggregate), read(record.event))
+    val records = from(EventRecords)(r => where(r.source === (source: String)).select(r))
+    for (record <- records) yield Committed(record.source, read(record.event))
   }
 
   def addListener(callback: EventStoreListener) {

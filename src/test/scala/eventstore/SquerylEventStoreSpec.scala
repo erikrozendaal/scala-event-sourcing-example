@@ -17,7 +17,7 @@ object Test {
     SessionFactory.concreteFactory = Some {
       () =>
         val result = Session.create(java.sql.DriverManager.getConnection(jdbcUrl), new H2Adapter)
-//        result.setLogger(println)
+        // result.setLogger(println)
         result
     }
 
@@ -27,7 +27,10 @@ object Test {
   }
 }
 
-object SquerylEventStoreSpec extends org.specs.Specification {
+object SquerylEventStoreSpec extends EventStoreSpec {
+
+  val serializer = new JsonSerializer()(Serialization.formats(new ReflectionTypeHints))
+  val subject = new SquerylEventStore(serializer)
 
   doBeforeSpec {
     Test.initialize
@@ -36,8 +39,6 @@ object SquerylEventStoreSpec extends org.specs.Specification {
   val Source = newIdentifier
 
   "SquerylEventStore" should {
-    val serializer = new JsonSerializer()(Serialization.formats(new ReflectionTypeHints))
-    val subject = new SquerylEventStore(serializer)
 
     forExample("commit and load events") in {
       val originals = Uncommitted(Source, ExampleEvent("example")) :: Uncommitted(Source, AnotherEvent("another")) :: Nil
