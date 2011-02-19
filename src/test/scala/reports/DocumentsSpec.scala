@@ -5,7 +5,7 @@ import org.specs.Specification
 
 case class ExampleDocument(content: String) extends Document {
   def applyEvent = {
-    case Event(event: ExampleEvent) => copy(event.content)
+    case Payload(event: ExampleEvent) => copy(event.content)
   }
 }
 

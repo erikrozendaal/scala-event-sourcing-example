@@ -20,18 +20,15 @@ object SquerylEventStore extends Schema {
 class SquerylEventStore(serializer: Serializer) extends EventStore {
   import SquerylEventStore.EventRecords
 
-  private def write = serializer.serialize _
-  private def read = serializer.deserialize _
-
-  implicit def stringToIdentifier(s: String): Identifier = UUID.fromString(s)
-  implicit def identifierToString(identifier: Identifier): String = identifier.toString
+  private implicit def stringToIdentifier(s: String): Identifier = UUID.fromString(s)
+  private implicit def identifierToString(identifier: Identifier): String = identifier.toString
 
   def commit(events: Iterable[UncommittedEvent]) {
     transaction {
       val records = events map (uncommitted => EventRecord(0, uncommitted.source, write(uncommitted.event)))
       EventRecords.insert(records)
     }
-    for {listener <- listeners; uncommitted <- events} {
+    for (uncommitted <- events; listener <- listeners) {
       listener(Committed(uncommitted.source, uncommitted.event))
     }
   }
@@ -45,5 +42,17 @@ class SquerylEventStore(serializer: Serializer) extends EventStore {
     listeners = callback :: listeners
   }
 
+  def replayAllEvents {
+    transaction {
+      val records = from(EventRecords)(r => select(r).orderBy(r.id asc))
+      for (record <- records; listener <- listeners) {
+        listener(Committed(record.source, read(record.event)))
+      }
+    }
+  }
+
   private var listeners: List[EventStoreListener] = Nil
+
+  private def write = serializer.serialize _
+  private def read = serializer.deserialize _
 }

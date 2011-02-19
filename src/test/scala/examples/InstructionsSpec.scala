@@ -9,7 +9,7 @@ case class InstructionAdded(text: String)
 
 case class InstructionIndex(instructions: List[String] = List.empty) extends Index {
   def applyEvent = {
-    case Event(event: InstructionAdded) => copy(event.text :: instructions)
+    case Payload(event: InstructionAdded) => copy(event.text :: instructions)
   }
 }
 

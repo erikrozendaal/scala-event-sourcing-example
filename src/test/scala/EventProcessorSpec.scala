@@ -9,7 +9,7 @@ object EventProcessorSpec extends org.specs.Specification {
   var processed: Option[String] = None
 
   val subject = EventProcessor[ExampleEvent, Unit] {
-    case Source(id) & Event(event: ExampleEvent) =>
+    case Payload(event: ExampleEvent) =>
       processed = Some(event.content)
   }
 

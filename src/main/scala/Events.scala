@@ -16,6 +16,6 @@ object Source {
   def unapply(recorded: Recorded[_]): Option[Identifier] = Some(recorded.source)
 }
 
-object Event {
+object Payload {
   def unapply[A <: DomainEvent](recorded: Recorded[A]): Option[A] = Some(recorded.event)
 }

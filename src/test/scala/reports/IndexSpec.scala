@@ -10,7 +10,7 @@ object IndexSpec extends Specification {
   val subject = new Indexes
 
   case class ExampleIndex(count: Int) extends Index {
-    def applyEvent = { case _: CommittedEvent => copy(count + 1) }
+    def applyEvent = { case _ => copy(count + 1) }
   }
 
   "index" should {

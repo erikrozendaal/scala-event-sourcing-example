@@ -1,4 +1,5 @@
 package com.zilverline.es2
 
-case class ExampleEvent(content: String)
-case class AnotherEvent(content: String)
+trait TestEvent
+case class ExampleEvent(content: String) extends TestEvent
+case class AnotherEvent(content: String) extends TestEvent
