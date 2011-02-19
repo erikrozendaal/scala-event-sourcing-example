@@ -14,8 +14,8 @@ object DocumentsSpec extends Specification {
 
   val Source = newIdentifier
 
-  def investigator: Investigator[ExampleEvent] = {
-    case Committed(_, event: ExampleEvent) => ExampleDocument(event.content)
+  def investigator: DocumentFactory[ExampleEvent] = {
+    case Payload(event: ExampleEvent) => ExampleDocument(event.content)
   }
 
   "Documents" should {

@@ -3,6 +3,20 @@ package reports
 
 import org.specs.Specification
 
+object AtomicHolderSpec extends Specification {
+
+  val subject = new AtomicHolder(1)
+
+  "get current value" in {
+    subject.get must beEqualTo(1)
+  }
+
+  "modify value" in {
+    subject.modifyWithRetry(_ + 1) must beEqualTo(2)
+    subject.get must beEqualTo(2)
+  }
+}
+
 object IndexSpec extends Specification {
 
   val Source = newIdentifier

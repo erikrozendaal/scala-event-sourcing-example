@@ -41,8 +41,7 @@ abstract class EventStoreSpec extends Specification {
     val received: mutable.Queue[(Identifier, Any)] = mutable.Queue()
 
     def listener: subject.EventStoreListener = {
-      commit =>
-        received += (commit.source -> commit.event)
+      commit => received += commit.source -> commit.event
     }
 
     subject.addListener(listener)

@@ -13,11 +13,11 @@ trait EventStore {
 class MemoryEventStore extends EventStore {
 
   def commit(events: Iterable[UncommittedEvent]) {
-    for (event <- events) {
-      val committed = Committed(event.source, event.event)
-      storedEvents.getOrElseUpdate(event.source, mutable.Queue()) += committed;
-      listeners foreach {callback => callback(committed)}
-    }
+    if (events.isEmpty) return
+
+    val committed = for (event <- events) yield Committed(event.source, event.event)
+    committed foreach { c => storedEvents.getOrElseUpdate(c.source, mutable.Queue()) += c };
+    for (listener <- listeners; c <- committed) listener(c)
   }
 
   def load(source: Identifier): Iterable[CommittedEvent] = storedEvents.getOrElse(source, Iterable.empty)

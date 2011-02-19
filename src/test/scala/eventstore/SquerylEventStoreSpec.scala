@@ -53,7 +53,7 @@ object SquerylEventStoreSpec extends EventStoreSpec {
         Committed(Source, AnotherEvent("another"))))
     }
 
-    forExample("invoke listeners for committed events") in {
+    forExample("invoke listeners for each committed event") in {
       var committed: Option[CommittedEvent] = None
       subject addListener {
         c => committed = Some(c)

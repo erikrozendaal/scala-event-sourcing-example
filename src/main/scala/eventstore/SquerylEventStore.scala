@@ -24,13 +24,14 @@ class SquerylEventStore(serializer: Serializer) extends EventStore {
   private implicit def identifierToString(identifier: Identifier): String = identifier.toString
 
   def commit(events: Iterable[UncommittedEvent]) {
+    if (events.isEmpty) return
+
     transaction {
       val records = events map (uncommitted => EventRecord(0, uncommitted.source, write(uncommitted.event)))
       EventRecords.insert(records)
     }
-    for (uncommitted <- events; listener <- listeners) {
-      listener(Committed(uncommitted.source, uncommitted.event))
-    }
+    val committed = for (event <- events) yield Committed(event.source, event.event)
+    for (listener <- listeners; c <- committed) listener(c)
   }
 
   def load(source: Identifier): Iterable[CommittedEvent] = transaction {
