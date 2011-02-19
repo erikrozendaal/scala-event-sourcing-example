@@ -4,7 +4,7 @@ package domain
 import behavior._
 
 class RecordedEventHandler[-A <: DomainEvent, +B](callback: Recorded[A] => B) {
-  def applyFromHistory(event: Recorded[A]) = callback(event)
+  def applyFromHistory(event: Recorded[A]): B = callback(event)
 }
 
 object RecordedEventHandler {

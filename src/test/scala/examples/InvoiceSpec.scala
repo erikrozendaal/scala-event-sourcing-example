@@ -20,19 +20,19 @@ case class ChangeInvoiceRecipient(invoiceId: Identifier, recipient: Option[Strin
 case class AddInvoiceItem(invoiceId: Identifier, description: String, price: BigDecimal) extends Command
 
 sealed trait Invoice extends AggregateRoot {
-  type Event = InvoiceEvent
+  protected[this] type Event = InvoiceEvent
 }
 
 object Invoice extends AggregateFactory[Invoice] {
   def create(invoiceId: Identifier): Behavior[DraftInvoice] = created(invoiceId, InvoiceCreated())
 
-  def applyEvent = created
+  protected[this] def applyEvent = created
 
   private def created = when[InvoiceCreated] {event => DraftInvoice(event.source)}
 }
 
 case class DraftInvoice(
-  val id: Identifier,
+  protected[this] val id: Identifier,
   recipient_? : Boolean = false,
   nextItemId: Int = 1,
   items: Map[Int, InvoiceItem] = Map.empty
@@ -49,14 +49,14 @@ case class DraftInvoice(
 
   private def totalAmount = items.values.map(_.amount).sum
 
-  def applyEvent = recipientChanged orElse itemAdded
+  protected[this] def applyEvent = recipientChanged orElse itemAdded
 
   private def recipientChanged = when[InvoiceRecipientChanged] {
     event => copy(recipient_? = event.recipient.isDefined)
   }
 
   private def itemAdded = when[InvoiceItemAdded] {
-    case Payload(event) => copy(items = items + (event.item.id -> event.item), nextItemId = nextItemId + 1)
+    event => copy(items = items + (event.item.id -> event.item), nextItemId = nextItemId + 1)
   }
 }
 
@@ -66,10 +66,10 @@ case class InvoiceDocument(
   items: Map[Int, InvoiceItem] = Map.empty,
   totalAmount: BigDecimal = 0
 ) extends Document {
-  def applyEvent = {
-    case Payload(event: InvoiceRecipientChanged) =>
+  def applyEvent = _.payload match {
+    case event: InvoiceRecipientChanged =>
       copy(recipient = event.recipient)
-    case Payload(event: InvoiceItemAdded) =>
+    case event: InvoiceItemAdded =>
       copy(items = items + (event.item.id -> event.item), totalAmount = event.totalAmount)
   }
 }
