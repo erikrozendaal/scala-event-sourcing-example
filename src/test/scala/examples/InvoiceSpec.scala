@@ -24,11 +24,11 @@ sealed trait Invoice extends AggregateRoot {
 }
 
 object Invoice extends AggregateFactory[Invoice] {
-  def create(invoiceId: Identifier) = applyCreated(invoiceId, InvoiceCreated())
+  def create(invoiceId: Identifier): Behavior[DraftInvoice] = applyCreated(invoiceId, InvoiceCreated())
 
   def applyEvent = applyCreated
 
-  private def applyCreated = handler {id => (_: InvoiceCreated) => DraftInvoice(id)}
+  private def applyCreated = create {id => (_: InvoiceCreated) => DraftInvoice(id)}
 }
 
 case class DraftInvoice(
