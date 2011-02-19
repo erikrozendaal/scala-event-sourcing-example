@@ -15,7 +15,7 @@ class MemoryEventStore extends EventStore {
   def commit(events: Iterable[UncommittedEvent]) {
     if (events.isEmpty) return
 
-    val committed = for (event <- events) yield Committed(event.source, event.event)
+    val committed = for (event <- events) yield Committed(event.source, event.payload)
     committed foreach { c => storedEvents.getOrElseUpdate(c.source, mutable.Queue()) += c };
     for (listener <- listeners; c <- committed) listener(c)
   }

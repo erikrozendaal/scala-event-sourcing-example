@@ -27,10 +27,10 @@ class SquerylEventStore(serializer: Serializer) extends EventStore {
     if (events.isEmpty) return
 
     transaction {
-      val records = events map (uncommitted => EventRecord(0, uncommitted.source, write(uncommitted.event)))
+      val records = events map (uncommitted => EventRecord(0, uncommitted.source, write(uncommitted.payload)))
       EventRecords.insert(records)
     }
-    val committed = for (event <- events) yield Committed(event.source, event.event)
+    val committed = for (event <- events) yield Committed(event.source, event.payload)
     for (listener <- listeners; c <- committed) listener(c)
   }
 

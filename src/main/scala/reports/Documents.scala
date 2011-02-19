@@ -16,7 +16,7 @@ class Documents {
     reports.get(committed.source) foreach {
       report => reports.put(committed.source, report.applyEvent(committed))
     }
-    factories.get(committed.event.getClass)
+    factories.get(committed.payload.getClass)
       .flatMap(_.asInstanceOf[DocumentFactory[AnyRef]].lift.apply(committed))
       .foreach(report => store(committed.source, report))
   }

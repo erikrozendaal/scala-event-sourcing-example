@@ -24,11 +24,11 @@ sealed trait Invoice extends AggregateRoot {
 }
 
 object Invoice extends AggregateFactory[Invoice] {
-  def create(invoiceId: Identifier): Behavior[DraftInvoice] = applyCreated(invoiceId, InvoiceCreated())
+  def create(invoiceId: Identifier): Behavior[DraftInvoice] = created(invoiceId, InvoiceCreated())
 
-  def applyEvent = applyCreated
+  def applyEvent = created
 
-  private def applyCreated = create {id => (_: InvoiceCreated) => DraftInvoice(id)}
+  private def created = when[InvoiceCreated] {event => DraftInvoice(event.source)}
 }
 
 case class DraftInvoice(
@@ -39,24 +39,24 @@ case class DraftInvoice(
 ) extends Invoice {
 
   def changeRecipient(recipient: Option[String]): Behavior[DraftInvoice] = {
-    applyRecipientChanged(InvoiceRecipientChanged(recipient.map(_.trim).filter(_.nonEmpty)))
+    recipientChanged(InvoiceRecipientChanged(recipient.map(_.trim).filter(_.nonEmpty)))
   }
 
   def addItem(description: String, amount: BigDecimal): Behavior[DraftInvoice] = {
     val item = InvoiceItem(nextItemId, description, amount)
-    applyItemAdded(InvoiceItemAdded(item, totalAmount + amount))
+    itemAdded(InvoiceItemAdded(item, totalAmount + amount))
   }
 
   private def totalAmount = items.values.map(_.amount).sum
 
-  def applyEvent = applyRecipientChanged orElse applyItemAdded
+  def applyEvent = recipientChanged orElse itemAdded
 
-  private def applyRecipientChanged = handler {
-    event: InvoiceRecipientChanged => copy(recipient_? = event.recipient.isDefined)
+  private def recipientChanged = when[InvoiceRecipientChanged] {
+    event => copy(recipient_? = event.recipient.isDefined)
   }
 
-  private def applyItemAdded = handler {
-    event: InvoiceItemAdded => copy(items = items + (event.item.id -> event.item), nextItemId = nextItemId + 1)
+  private def itemAdded = when[InvoiceItemAdded] {
+    case Payload(event) => copy(items = items + (event.item.id -> event.item), nextItemId = nextItemId + 1)
   }
 }
 
