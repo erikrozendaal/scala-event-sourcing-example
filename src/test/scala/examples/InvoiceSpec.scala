@@ -6,6 +6,7 @@ import org.specs.Specification
 import behavior._
 import commands._
 import domain._
+import reports._
 
 case class InvoiceItem(id: Int, description: String, amount: BigDecimal)
 
@@ -51,17 +52,37 @@ case class DraftInvoice(
   def applyEvent = applyRecipientChanged orElse applyItemAdded
 
   private def applyRecipientChanged = handler {
-    event: InvoiceRecipientChanged =>
-      copy(recipient_? = event.recipient.isDefined)
+    event: InvoiceRecipientChanged => copy(recipient_? = event.recipient.isDefined)
   }
 
   private def applyItemAdded = handler {
-    event: InvoiceItemAdded =>
-      copy(items = items + (event.item.id -> event.item), nextItemId = nextItemId + 1)
+    event: InvoiceItemAdded => copy(items = items + (event.item.id -> event.item), nextItemId = nextItemId + 1)
+  }
+}
+
+case class InvoiceDocument(
+  id: Identifier,
+  recipient: Option[String] = None,
+  items: Map[Int, InvoiceItem] = Map.empty,
+  totalAmount: BigDecimal = 0
+) extends Document {
+  def applyEvent = {
+    case Payload(event: InvoiceRecipientChanged) =>
+      copy(recipient = event.recipient)
+    case Payload(event: InvoiceItemAdded) =>
+      copy(items = items + (event.item.id -> event.item), totalAmount = event.totalAmount)
+  }
+}
+
+class InvoiceReports extends Documents {
+  investigate[InvoiceCreated] {
+    case Source(invoiceId) => InvoiceDocument(invoiceId)
   }
 }
 
 object InvoiceSpec extends Specification {
+
+  implicit val InvoiceFactory = Invoice
 
   val invoiceId = newIdentifier
 
@@ -74,11 +95,11 @@ object InvoiceSpec extends Specification {
   }
   commands register {
     command: ChangeInvoiceRecipient =>
-      load[DraftInvoice](command.invoiceId)(Invoice) flatMap (_.changeRecipient(command.recipient))
+      load[DraftInvoice](command.invoiceId) flatMap (_.changeRecipient(command.recipient))
   }
   commands register {
     command: AddInvoiceItem =>
-      load[DraftInvoice](command.invoiceId)(Invoice) flatMap (_.addItem(command.description, command.price))
+      load[DraftInvoice](command.invoiceId) flatMap (_.addItem(command.description, command.price))
   }
 
   "client" should {

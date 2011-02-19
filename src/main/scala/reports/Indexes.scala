@@ -26,7 +26,7 @@ class Indexes {
     indexByType.put(index.getClass, new AtomicHolder(index))
   }
 
-  def get[T <: Index](implicit m: Manifest[T]): T = indexByType(m.erasure).get.asInstanceOf[T]
+  def get[T <: Index](implicit m: Manifest[T], nn: NotNothing[T]): T = indexByType(m.erasure).get.asInstanceOf[T]
 
   def process(event: CommittedEvent) {
     indexByType.values.foreach { index => index.modifyWithRetry(_.applyEvent(event)) }

@@ -23,7 +23,7 @@ object DocumentsSpec extends Specification {
     "generate specific documents based on initial event" in {
       subject.update(Committed(Source, ExampleEvent("hello")))
 
-      subject.retrieve[ExampleDocument](Source) must beEqualTo(ExampleDocument("hello"))
+      subject.get[ExampleDocument](Source) must beEqualTo(ExampleDocument("hello"))
     }
   }
 
@@ -32,7 +32,7 @@ object DocumentsSpec extends Specification {
     "be kept up-to-date of new events" in {
       subject.update(Committed(Source, ExampleEvent("goodbye")))
 
-      subject.retrieve[ExampleDocument](Source) must beEqualTo(ExampleDocument("goodbye"))
+      subject.get[ExampleDocument](Source) must beEqualTo(ExampleDocument("goodbye"))
     }
   }
 }
