@@ -5,6 +5,7 @@ import java.util.UUID
 package object es2 {
   type Identifier = UUID
   type Revision = Long
+  val InitialRevision: Revision = 1L
 
   def newIdentifier: Identifier = UUID.randomUUID
 

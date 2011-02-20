@@ -31,7 +31,7 @@ trait AggregateRoot {
 
   protected[this] def id: Identifier
 
-  protected[this] def applyEvent: RecordedEvent => AggregateRoot
+  protected[this] def applyEvent: RecordedEvent PartialFunction AggregateRoot
 
   protected[this] def when[A <: Event] = new When[A]
 
@@ -41,23 +41,26 @@ trait AggregateRoot {
     def apply[B](callback: Recorded[A] => B) = new UpdateHandler(id, callback)
   }
 
-  private[domain] type EventType = Event
-  private[domain] def applyEventFromHistory = applyEvent
+  private[domain] def internalId = id
+  private[domain] type InternalEvent = Event
+  private[domain] def internalApplyEvent = applyEvent
 }
 
 trait AggregateFactory[-AR <: AggregateRoot] {
   def loadFromHistory[T <: AR : NotNothing](history: Iterable[CommittedEvent]): T = {
     val aggregate = applyEvent(history.head)
-    (aggregate /: history.tail)(_.applyEventFromHistory(_)).asInstanceOf[T]
+    (aggregate /: history.tail)(_.internalApplyEvent(_)).asInstanceOf[T]
   }
 
-  protected[this] def applyEvent: RecordedEvent => AggregateRoot
+  protected[this] def applyEvent: RecordedEvent PartialFunction AggregateRoot
 
-  protected[this] def when[A <: AR#EventType] = new When[A]
+  protected[this] def when[A <: AR#InternalEvent] = new When[A]
 
-  implicit protected[this] def recordedToPayload[A <: AR#EventType](recorded: Recorded[A]): A = recorded.payload
+  implicit protected[this] def recordedToPayload[A <: AR#InternalEvent](recorded: Recorded[A]): A = recorded.payload
 
   protected[this] class When[A <: DomainEvent] {
     def apply[B](callback: Recorded[A] => B) = new CreateHandler(callback)
   }
+
+  private[domain] def internalApplyEvent = applyEvent
 }

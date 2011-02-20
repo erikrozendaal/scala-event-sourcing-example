@@ -48,6 +48,12 @@ trait Behavior[+A] {
   }
 
   def andThen[B](next: Behavior[B]) = this flatMap (_ => next)
+
+  def trigger = apply(UnitOfWork(Nil, null))
+
+  def result = trigger match {
+    case Accepted(_, result) => result
+  }
 }
 
 object Behavior {
