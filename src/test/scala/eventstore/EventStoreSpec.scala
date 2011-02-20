@@ -13,27 +13,31 @@ abstract class EventStoreSpec extends Specification {
 
   "event store" should {
     "save single event" in {
-      subject.commit(Iterable(Uncommitted(StreamA, ExampleEvent("example"))))
+      subject.commit(Iterable(Uncommitted(StreamA, 1, ExampleEvent("example"))))
 
       subject.load(StreamA) must beEqualTo(Seq(
-        Committed(StreamA, ExampleEvent("example"))))
+        Committed(StreamA, 1, ExampleEvent("example"))))
     }
 
     "save multiple events" in {
-      subject.commit(Iterable(Uncommitted(StreamA, ExampleEvent("first"))))
-      subject.commit(Iterable(Uncommitted(StreamA, ExampleEvent("second"))))
+      subject.commit(Iterable(Uncommitted(StreamA, 1, ExampleEvent("first"))))
+      subject.commit(Iterable(Uncommitted(StreamA, 2, ExampleEvent("second"))))
 
       subject.load(StreamA) must beEqualTo(Seq(
-        Committed(StreamA, ExampleEvent("first")),
-        Committed(StreamA, ExampleEvent("second"))))
+        Committed(StreamA, 1, ExampleEvent("first")),
+        Committed(StreamA, 2, ExampleEvent("second"))))
     }
 
     "save multiple events to different sources" in {
-      subject.commit(Iterable(Uncommitted(StreamA, ExampleEvent("a"))))
-      subject.commit(Iterable(Uncommitted(StreamB, ExampleEvent("b"))))
+      subject.commit(Iterable(Uncommitted(StreamA, 1, ExampleEvent("a"))))
+      subject.commit(Iterable(Uncommitted(StreamB, 1, ExampleEvent("b"))))
 
-      subject.load(StreamA) must beEqualTo(Seq(Committed(StreamA, ExampleEvent("a"))))
-      subject.load(StreamB) must beEqualTo(Seq(Committed(StreamB, ExampleEvent("b"))))
+      subject.load(StreamA) must beEqualTo(Seq(Committed(StreamA, 1, ExampleEvent("a"))))
+      subject.load(StreamB) must beEqualTo(Seq(Committed(StreamB, 1, ExampleEvent("b"))))
+    }
+
+    "throw optimistic locking exception on version mismatch" in {
+
     }
   }
 
@@ -47,7 +51,7 @@ abstract class EventStoreSpec extends Specification {
     subject.addListener(listener)
 
     "dispatch saved events to listener" in {
-      subject.commit(Iterable(Uncommitted(StreamA, ExampleEvent("example"))))
+      subject.commit(Iterable(Uncommitted(StreamA, 1, ExampleEvent("example"))))
 
       received must beEqualTo(Seq(StreamA -> ExampleEvent("example")))
     }
@@ -55,7 +59,7 @@ abstract class EventStoreSpec extends Specification {
     "support multiple listeners" in {
       subject.addListener(listener)
 
-      subject.commit(Iterable(Uncommitted(StreamA, ExampleEvent("example"))))
+      subject.commit(Iterable(Uncommitted(StreamA, 1, ExampleEvent("example"))))
 
       received must beEqualTo(Seq(StreamA -> ExampleEvent("example"), StreamA -> ExampleEvent("example")))
     }

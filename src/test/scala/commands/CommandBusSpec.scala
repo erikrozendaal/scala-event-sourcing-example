@@ -36,17 +36,17 @@ object CommandBusSpec extends org.specs.Specification {
   "command bus" should {
     subject.register(CommandHandler {
       command: ExampleCommand =>
-        record(Source, ExampleEvent(command.content)) andThen behavior.accept()
+        modifyEventSource(Source, ExampleEvent(command.content))(_ => None) andThen behavior.accept()
     })
     subject.register(CommandHandler {
       command: AnotherCommand =>
-        record(Source, ExampleEvent(command.content)) andThen behavior.reject("failed")
+        modifyEventSource(Source, ExampleEvent(command.content))(_ => None) andThen behavior.reject("failed")
     })
 
     "commit accepted unit of work" in {
       subject.send(ExampleCommand("hello"))
 
-      eventStore.load(Source) must contain(Committed(Source, ExampleEvent("hello")))
+      eventStore.load(Source) must contain(Committed(Source, 1, ExampleEvent("hello")))
     }
 
     "rollback rejected unit of work" in {

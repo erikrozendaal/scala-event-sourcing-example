@@ -5,8 +5,8 @@ import java.util.UUID
 import org.squeryl._
 import org.squeryl.PrimitiveTypeMode._
 
-case class EventRecord(id: Long, source: String, event: String) extends KeyedEntity[Long] {
-  def this() = this(0, "", "")
+case class EventRecord(id: Long, source: String, sequence: Long, event: String) extends KeyedEntity[Long] {
+  def this() = this(0, "", 0L, "")
 }
 
 object SquerylEventStore extends Schema {
@@ -27,16 +27,16 @@ class SquerylEventStore(serializer: Serializer) extends EventStore {
     if (events.isEmpty) return
 
     transaction {
-      val records = events map (uncommitted => EventRecord(0, uncommitted.source, write(uncommitted.payload)))
+      val records = events map (uncommitted => EventRecord(0, uncommitted.source, uncommitted.sequence, write(uncommitted.payload)))
       EventRecords.insert(records)
     }
-    val committed = for (event <- events) yield Committed(event.source, event.payload)
+    val committed = for (event <- events) yield Committed(event.source, event.sequence, event.payload)
     for (listener <- listeners; c <- committed) listener(c)
   }
 
   def load(source: Identifier): Iterable[CommittedEvent] = transaction {
     val records = from(EventRecords)(r => where(r.source === (source: String)).select(r))
-    for (record <- records) yield Committed(record.source, read(record.event))
+    for (record <- records) yield Committed(record.source, record.sequence, read(record.event))
   }
 
   def addListener(callback: EventStoreListener) {
@@ -47,7 +47,7 @@ class SquerylEventStore(serializer: Serializer) extends EventStore {
     transaction {
       val records = from(EventRecords)(r => select(r).orderBy(r.id asc))
       for (record <- records; listener <- listeners) {
-        listener(Committed(record.source, read(record.event)))
+        listener(Committed(record.source, record.sequence, read(record.event)))
       }
     }
   }

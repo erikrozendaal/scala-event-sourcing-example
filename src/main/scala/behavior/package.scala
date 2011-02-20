@@ -5,10 +5,14 @@ package object behavior {
 
   def reject(message: String) = Behavior(_ => Rejected(message))
 
-  def record[A <: DomainEvent](source: Identifier, event: A) = Behavior {
+  def trackEventSource(source: Identifier, revision: Revision, value: Any) = Behavior {
+    uow => Accepted(uow.trackEventSource(source, revision, value), ())
+  }
+
+  def modifyEventSource[A <: DomainEvent, B](source: Identifier, event: A)(f: Uncommitted[A] => B) = Behavior {
     uow =>
-      val uncommitted = Uncommitted(source, event)
-      Accepted(uow.copy(uncommitted :: uow.events), uncommitted)
+      val (updated, result) = uow.modifyEventSource(source, event)(f)
+      Accepted(updated, result)
   }
 
   def guard(condition: Boolean, message: => String) =

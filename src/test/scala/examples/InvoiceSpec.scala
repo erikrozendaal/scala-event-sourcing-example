@@ -99,20 +99,20 @@ object InvoiceSpec extends Specification {
     "be able to create invoice" in {
       commands.send(CreateInvoice(invoiceId))
 
-      eventStore.load(invoiceId) must contain(Committed(invoiceId, InvoiceCreated()))
+      eventStore.load(invoiceId) must contain(Committed(invoiceId, 1, InvoiceCreated()))
     }
   }
 
   "new invoice" should {
-    eventStore.commit(Iterable(Uncommitted(invoiceId, InvoiceCreated())))
+    eventStore.commit(Iterable(Uncommitted(invoiceId, 1, InvoiceCreated())))
     "allow items to be added" in {
       commands.send(AddInvoiceItem(invoiceId, "beverage", 2.95))
       commands.send(AddInvoiceItem(invoiceId, "sandwich", 4.95))
 
       eventStore.load(invoiceId) must contain(
-        Committed(invoiceId, InvoiceItemAdded(InvoiceItem(1, "beverage", 2.95), 2.95)))
+        Committed(invoiceId, 2, InvoiceItemAdded(InvoiceItem(1, "beverage", 2.95), 2.95)))
       eventStore.load(invoiceId) must contain(
-        Committed(invoiceId, InvoiceItemAdded(InvoiceItem(2, "sandwich", 4.95), 7.90)))
+        Committed(invoiceId, 3, InvoiceItemAdded(InvoiceItem(2, "sandwich", 4.95), 7.90)))
     }
   }
 }

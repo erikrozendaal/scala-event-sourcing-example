@@ -6,6 +6,7 @@ package object domain {
   def load[AR <: AggregateRoot](source: Identifier)(implicit factory: AggregateFactory[AR]): Behavior[AR] = Behavior {
     uow =>
       val events = uow.eventStore.load(source)
-      Accepted(uow, factory.loadFromHistory[AR](events))
+      val aggregate = factory.loadFromHistory[AR](events)
+      Accepted(uow.trackEventSource(source, events.lastOption.map(_.sequence).getOrElse(0L), aggregate), aggregate)
   }
 }

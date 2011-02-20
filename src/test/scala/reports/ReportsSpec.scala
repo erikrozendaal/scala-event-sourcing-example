@@ -14,7 +14,7 @@ object ReportSpec extends org.specs.Specification {
   subject.register(ExampleIndex(0))
 
   "receive all events" in {
-    subject.applyEvent(Committed(Source, ExampleEvent("hello")))
+    subject.applyEvent(Committed(Source, 1, ExampleEvent("hello")))
 
     subject.get[ExampleIndex].count must beEqualTo(1)
   }

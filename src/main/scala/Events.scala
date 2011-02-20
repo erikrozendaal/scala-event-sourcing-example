@@ -2,11 +2,12 @@ package com.zilverline.es2
 
 sealed trait Recorded[+A <: DomainEvent] {
   def source: Identifier
+  def sequence: Revision
   def payload: A
 }
 
-case class Committed[+A <: DomainEvent](source: Identifier, payload: A) extends Recorded[A]
-case class Uncommitted[+A <: DomainEvent](source: Identifier, payload: A) extends Recorded[A]
+case class Committed[+A <: DomainEvent](source: Identifier, sequence: Revision, payload: A) extends Recorded[A]
+case class Uncommitted[+A <: DomainEvent](source: Identifier, sequence: Revision, payload: A) extends Recorded[A]
 
 object & {
   def unapply[A](a: A): Option[(A, A)] = Some(a, a)

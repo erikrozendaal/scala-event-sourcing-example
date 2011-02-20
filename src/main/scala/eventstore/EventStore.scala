@@ -3,6 +3,8 @@ package eventstore
 
 import scala.collection._
 
+class OptimisticConcurrencyException(message: String) extends RuntimeException(message)
+
 trait EventStore {
   type EventStoreListener = CommittedEvent => Unit
   def commit(events: Iterable[UncommittedEvent])
@@ -15,7 +17,7 @@ class MemoryEventStore extends EventStore {
   def commit(events: Iterable[UncommittedEvent]) {
     if (events.isEmpty) return
 
-    val committed = for (event <- events) yield Committed(event.source, event.payload)
+    val committed = for (event <- events) yield Committed(event.source, event.sequence, event.payload)
     committed foreach { c => storedEvents.getOrElseUpdate(c.source, mutable.Queue()) += c };
     for (listener <- listeners; c <- committed) listener(c)
   }

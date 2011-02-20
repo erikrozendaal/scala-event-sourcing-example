@@ -19,11 +19,11 @@ object RecordedEventHandler {
 }
 
 class CreateHandler[-A <: DomainEvent, +B](callback: Recorded[A] => B) extends RecordedEventHandler(callback) {
-  def apply(source: Identifier, event: A) = record(source, event) flatMap (recorded => accept(callback(recorded)))
+  def apply(source: Identifier, event: A) = modifyEventSource(source, event)(callback)
 }
 
 class UpdateHandler[-A <: DomainEvent, +B](source: Identifier, callback: Recorded[A] => B) extends RecordedEventHandler(callback) {
-  def apply(event: A) = record(source, event) flatMap (recorded => accept(callback(recorded)))
+  def apply(event: A) = modifyEventSource(source, event)(callback)
 }
 
 trait AggregateRoot {

@@ -43,14 +43,14 @@ object SquerylEventStoreSpec extends EventStoreSpec {
   "SquerylEventStore" should {
     doBefore {TestDatabase.clear}
 
-    val originals = Uncommitted(Source, ExampleEvent("example")) :: Uncommitted(Source, AnotherEvent("another")) :: Nil
+    val originals = Uncommitted(Source, 1, ExampleEvent("example")) :: Uncommitted(Source, 2, AnotherEvent("another")) :: Nil
 
     forExample("commit and load events") in {
       subject.commit(originals)
 
       subject.load(Source) must beEqualTo(Seq(
-        Committed(Source, ExampleEvent("example")),
-        Committed(Source, AnotherEvent("another"))))
+        Committed(Source, 1, ExampleEvent("example")),
+        Committed(Source, 2, AnotherEvent("another"))))
     }
 
     forExample("invoke listeners for each committed event") in {
@@ -61,7 +61,7 @@ object SquerylEventStoreSpec extends EventStoreSpec {
 
       subject.commit(originals.take(1))
 
-      committed must beEqualTo(Some(Committed(Source, ExampleEvent("example"))))
+      committed must beEqualTo(Some(Committed(Source, 1, ExampleEvent("example"))))
     }
 
     forExample("replay previously committed events") in {
@@ -72,8 +72,8 @@ object SquerylEventStoreSpec extends EventStoreSpec {
       subject.replayAllEvents
 
       replayed must beEqualTo(Seq(
-        Committed(Source, ExampleEvent("example")),
-        Committed(Source, AnotherEvent("another"))))
+        Committed(Source, 1, ExampleEvent("example")),
+        Committed(Source, 2, AnotherEvent("another"))))
     }
   }
 
