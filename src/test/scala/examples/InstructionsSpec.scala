@@ -7,7 +7,7 @@ import reports._
 
 case class InstructionAdded(text: String)
 
-case class InstructionIndex(instructions: List[String] = List.empty) extends Report {
+case class InstructionReport(instructions: List[String] = List.empty) extends Report[InstructionAdded] {
   def applyEvent = {
     case Payload(event: InstructionAdded) => copy(event.text :: instructions)
   }
@@ -18,17 +18,17 @@ object InstructionsSpec extends Specification {
   val Source = newIdentifier
 
   val eventStore = new eventstore.MemoryEventStore
-  val indexes = new Reports
+  val reports = new Reports
 
-  indexes.add(InstructionIndex())
+  reports.register(InstructionReport())
 
-  eventStore.addListener(commit => indexes.process(commit))
+  eventStore.addListener(commit => reports.applyEvent(commit))
 
   "instruction" should {
     "show up in index when added" in {
       eventStore.commit(Iterable(Uncommitted(Source, InstructionAdded("hello"))))
 
-      indexes.get[InstructionIndex].instructions must contain("hello")
+      reports.get[InstructionReport].instructions must contain("hello")
     }
   }
 }
