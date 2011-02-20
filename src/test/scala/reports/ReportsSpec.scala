@@ -1,13 +1,13 @@
 package com.zilverline.es2
 package reports
 
-object IndexSpec extends org.specs.Specification {
+object ReportSpec extends org.specs.Specification {
 
   val Source = newIdentifier
 
-  val subject = new Indexes
+  val subject = new Reports
 
-  case class ExampleIndex(count: Int) extends Index {
+  case class ExampleIndex(count: Int) extends Report {
     def applyEvent = { case _ => copy(count + 1) }
   }
 

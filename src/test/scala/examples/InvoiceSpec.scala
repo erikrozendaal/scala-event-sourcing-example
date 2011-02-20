@@ -65,18 +65,12 @@ case class InvoiceDocument(
   recipient: Option[String] = None,
   items: Map[Int, InvoiceItem] = Map.empty,
   totalAmount: BigDecimal = 0
-) extends Document {
+) extends EventProcessor[InvoiceEvent, InvoiceDocument] {
   def applyEvent = _.payload match {
     case event: InvoiceRecipientChanged =>
       copy(recipient = event.recipient)
     case event: InvoiceItemAdded =>
       copy(items = items + (event.item.id -> event.item), totalAmount = event.totalAmount)
-  }
-}
-
-class InvoiceReports extends Documents {
-  investigate[InvoiceCreated] {
-    case Source(invoiceId) => InvoiceDocument(invoiceId)
   }
 }
 
@@ -88,7 +82,6 @@ object InvoiceSpec extends Specification {
 
   val eventStore = new eventstore.MemoryEventStore
   val commands = new CommandBus(eventStore)
-//  val documents = new Documents(eventStore)
 
   commands register {
     command: CreateInvoice => Invoice.create(command.invoiceId)

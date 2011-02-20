@@ -7,7 +7,7 @@ import reports._
 
 case class InstructionAdded(text: String)
 
-case class InstructionIndex(instructions: List[String] = List.empty) extends Index {
+case class InstructionIndex(instructions: List[String] = List.empty) extends Report {
   def applyEvent = {
     case Payload(event: InstructionAdded) => copy(event.text :: instructions)
   }
@@ -18,7 +18,7 @@ object InstructionsSpec extends Specification {
   val Source = newIdentifier
 
   val eventStore = new eventstore.MemoryEventStore
-  val indexes = new Indexes
+  val indexes = new Reports
 
   indexes.add(InstructionIndex())
 
