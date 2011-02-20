@@ -1,7 +1,7 @@
 package com.zilverline.es2
 package util
 
-object AtomicVarSpec extends org.specs.Specification {
+class AtomicVarSpec extends org.specs.Specification {
   val subject = new AtomicVar(1)
 
   "get current value" in {

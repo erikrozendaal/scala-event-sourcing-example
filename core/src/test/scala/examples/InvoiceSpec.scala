@@ -74,7 +74,7 @@ case class InvoiceDocument(
   }
 }
 
-object InvoiceSpec extends Specification {
+class InvoiceSpec extends Specification {
 
   implicit val InvoiceFactory = Invoice
 

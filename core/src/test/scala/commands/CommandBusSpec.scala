@@ -1,7 +1,7 @@
 package com.zilverline.es2
 package commands
 
-object CommandBusSpec extends org.specs.Specification {
+class CommandBusSpec extends org.specs.Specification {
 
   import behavior._
 

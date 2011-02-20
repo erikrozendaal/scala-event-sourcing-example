@@ -31,7 +31,7 @@ object TestDatabase {
   }
 }
 
-object SquerylEventStoreSpec extends EventStoreSpec {
+class SquerylEventStoreSpec extends EventStoreSpec {
 
   val serializer = new JsonSerializer()(Serialization.formats(new ReflectionTypeHints))
   val subject = new SquerylEventStore(serializer)

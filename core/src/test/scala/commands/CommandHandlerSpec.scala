@@ -3,7 +3,7 @@ package commands
 
 import behavior._
 
-object CommandHandlerSpec extends org.specs.Specification {
+class CommandHandlerSpec extends org.specs.Specification {
 
   val AggregateIdentifier = newIdentifier
 

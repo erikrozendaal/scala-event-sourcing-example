@@ -1,7 +1,7 @@
 package com.zilverline.es2
 package reports
 
-object ReportSpec extends org.specs.Specification {
+class ReportSpec extends org.specs.Specification {
 
   val Source = newIdentifier
 

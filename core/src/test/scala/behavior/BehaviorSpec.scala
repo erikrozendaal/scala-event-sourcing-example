@@ -3,7 +3,7 @@ package behavior
 
 import eventstore._
 
-object BehaviorSpec extends org.specs.Specification {
+class BehaviorSpec extends org.specs.Specification {
 
   val eventStore = new MemoryEventStore
   val emptyUnitOfWork = UnitOfWork(Nil, eventStore)

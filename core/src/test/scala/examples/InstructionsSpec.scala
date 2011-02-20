@@ -13,7 +13,7 @@ case class InstructionReport(instructions: List[String] = List.empty) extends Re
   }
 }
 
-object InstructionsSpec extends Specification {
+class InstructionsSpec extends Specification {
 
   val Source = newIdentifier
 

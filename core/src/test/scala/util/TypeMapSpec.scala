@@ -1,7 +1,7 @@
 package com.zilverline.es2
 package util
 
-object TypeMapSpec extends org.specs.Specification {
+class TypeMapSpec extends org.specs.Specification {
   val zero = TypeMap.empty
 
   trait Root
