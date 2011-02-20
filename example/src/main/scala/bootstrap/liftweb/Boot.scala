@@ -8,7 +8,11 @@ import common._
 import http._
 import sitemap._
 import Loc._
-
+import org.squeryl.{Session, SessionFactory}
+import org.squeryl.adapters.H2Adapter
+import org.squeryl.PrimitiveTypeMode._
+import com.zilverline.es2.eventstore.SquerylEventStore
+import example.lib.DependencyFactory
 
 /**
  * A class that's instantiated early and run.  It allows the application
@@ -17,7 +21,7 @@ import Loc._
 class Boot {
   def boot {
     // where to search snippet
-    LiftRules.addToPackages("code")
+    LiftRules.addToPackages("example")
 
     // Build SiteMap
     val entries = List(
@@ -43,5 +47,27 @@ class Boot {
     // Force the request to be UTF-8
     LiftRules.early.append(_.setCharacterEncoding("UTF-8"))
 
+    // Squeryl for the event store
+    val jdbcUrl = "jdbc:h2:test"
+    val jdbcDriver = "org.h2.Driver"
+
+    Class.forName(jdbcDriver)
+
+    SessionFactory.concreteFactory = Some {
+      () =>
+        val result = Session.create(java.sql.DriverManager.getConnection(jdbcUrl), new H2Adapter)
+        result.setLogger(println)
+        result
+    }
+
+    try {
+      transaction {
+        SquerylEventStore.create
+      }
+    } catch {
+      case exception => println("Event store schema creation failed, maybe the tables already exist? " + exception.getMessage)
+    }
+
+    DependencyFactory.eventStore.vend.replayAllEvents
   }
 }

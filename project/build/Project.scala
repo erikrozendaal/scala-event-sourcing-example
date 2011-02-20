@@ -23,7 +23,7 @@ class Project(info: ProjectInfo) extends ParentProject(info) {
     override def scanDirectories = Nil
 
     override def libraryDependencies = Set(
-      "net.liftweb" %% "lift-webkit" % LiftVersion % "compile->default",
+      "net.liftweb" %% "lift-webkit" % LiftVersion % "compile->default" withSources(),
       "org.mortbay.jetty" % "jetty" % "6.1.22" % "test->default",
       "ch.qos.logback" % "logback-classic" % "0.9.26"
     ) ++ super.libraryDependencies

@@ -5,3 +5,4 @@ project/boot/
 *.iml
 .idea
 out
+test.*.db
