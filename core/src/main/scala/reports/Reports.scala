@@ -3,11 +3,16 @@ package reports
 
 import util._
 
-import scala.collection.mutable.{ArrayBuffer, Map => MMap}
+import scala.collection.mutable.{Map => MMap}
 
 trait Report[-A <: DomainEvent] extends EventProcessor[A, Report[A]]
 
+trait QueryableReport[A <: Report[_]] {
+  def query[B](f: A => B): B
+}
+
 class Reports extends EventProcessor[DomainEvent, Unit] {
+
   def register[A <: DomainEvent](report: Report[A])(implicit m: Manifest[A]) {
     require(!reportByType.contains(report.getClass), "report of type " + report.getClass.getName + " already registered")
 
@@ -17,6 +22,10 @@ class Reports extends EventProcessor[DomainEvent, Unit] {
         event: CommittedEvent =>
           reportVar.modifyWithRetry(_.applyEvent(event.asInstanceOf[Committed[A]]))
     })
+  }
+
+  def queryable[A <: Report[_] : Manifest : NotNothing]: QueryableReport[A] = new QueryableReport[A] {
+    def query[B](f: A => B) = f(Reports.this.get[A])
   }
 
   def get[T <: Report[_]](implicit m: Manifest[T], nn: NotNothing[T]): T = reportByType(m.erasure).get.asInstanceOf[T]

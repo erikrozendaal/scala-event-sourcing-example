@@ -13,10 +13,13 @@ class ReportSpec extends org.specs.Specification {
 
   subject.register(ExampleIndex(0))
 
+  val exampleIndex = subject.queryable[ExampleIndex]
+
   "receive all events" in {
     subject.applyEvent(Committed(Source, 1, ExampleEvent("hello")))
 
     subject.get[ExampleIndex].count must beEqualTo(1)
+    exampleIndex.query(_.count) must beEqualTo(1)
   }
 
 }

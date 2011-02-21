@@ -8,11 +8,10 @@ import com.zilverline.es2._
 import net.liftweb.util._
 import Helpers._
 import example.reports.InvoiceReport
-import reports.Reports
 
 class Invoices {
   lazy val commands = DependencyFactory.commands.vend
-  lazy val reports: Reports = DependencyFactory.reports.vend
+  lazy val invoiceReport = DependencyFactory.reports.vend.queryable[InvoiceReport]
 
   def create = {
     def doSubmit() {
@@ -25,7 +24,7 @@ class Invoices {
   }
 
   def list = {
-    val report: InvoiceReport = reports.get[InvoiceReport]
-    ".id" #> report.invoices.map(invoice => <p>{invoice}</p>)
+    val invoices = invoiceReport.query(_.invoices.map(invoice => <p>{invoice}</p>))
+    ".id" #> invoices
   }
 }

@@ -28,7 +28,7 @@ class InstructionsSpec extends Specification {
     "show up in index when added" in {
       eventStore.commit(Iterable(Uncommitted(Source, 1, InstructionAdded("hello"))))
 
-      reports.get[InstructionReport].instructions must contain("hello")
+      reports.queryable[InstructionReport].query(_.instructions) must contain("hello")
     }
   }
 }
