@@ -27,7 +27,8 @@ object TestDatabase {
   }
 
   def clear = transaction {
-    SquerylEventStore.EventRecords.delete(from(SquerylEventStore.EventRecords)(select(_)))
+    SquerylEventStore.EventStreamRecords.delete(from(SquerylEventStore.EventStreamRecords)(select(_)))
+    SquerylEventStore.EventStreams.delete(from(SquerylEventStore.EventStreams)(select(_)))
   }
 }
 

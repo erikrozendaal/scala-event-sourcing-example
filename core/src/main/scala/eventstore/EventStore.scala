@@ -1,33 +1,29 @@
 package com.zilverline.es2
 package eventstore
 
-import scala.collection._
+import collection.immutable.Queue
 
-class OptimisticConcurrencyException(message: String) extends RuntimeException(message)
+class OptimisticLockingException(message: String) extends RuntimeException(message)
 
 trait EventStore {
   type EventStoreListener = CommittedEvent => Unit
   def commit(events: Iterable[UncommittedEvent])
   def load(source: Identifier): Iterable[CommittedEvent]
-  def addListener(callback: EventStoreListener)
-}
-
-class MemoryEventStore extends EventStore {
-
-  def commit(events: Iterable[UncommittedEvent]) {
-    if (events.isEmpty) return
-
-    val committed = for (event <- events) yield Committed(event.source, event.sequence, event.payload)
-    committed foreach { c => storedEvents.getOrElseUpdate(c.source, mutable.Queue()) += c };
-    for (listener <- listeners; c <- committed) listener(c)
-  }
-
-  def load(source: Identifier): Iterable[CommittedEvent] = storedEvents.getOrElse(source, Iterable.empty)
 
   def addListener(callback: EventStoreListener) {
-    listeners += callback;
+    synchronized {listeners = listeners :+ callback}
   }
 
-  private val storedEvents: mutable.Map[Identifier, mutable.Queue[CommittedEvent]] = mutable.Map()
-  private val listeners: mutable.Queue[EventStoreListener] = mutable.Queue()
+  protected[this] def dispatchEvents(events: Iterable[CommittedEvent]) {
+    val listeners = this.listeners
+    for (event <- events; listener <- listeners) listener(event)
+  }
+
+  protected[this] def verifyEventsBeforeCommit(events: Iterable[UncommittedEvent]): Unit = {
+    require(events.forall(_.source == events.head.source), "only a single source can be updated in a single commit")
+    require(events.zip(events.tail).forall(pair => pair._1.sequence + 1 == pair._2.sequence), "events must be in proper order")
+  }
+
+  @volatile
+  private var listeners: Queue[EventStoreListener] = Queue.empty
 }

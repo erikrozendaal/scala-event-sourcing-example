@@ -11,7 +11,7 @@ class CommandBus(eventStore: EventStore) {
     val handler = handlers.getOrElse(command.getClass, throw new IllegalArgumentException("no handler for found command: " + command))
     handler.invokeWithCommand(command)(UnitOfWork(Nil, eventStore)) match {
       case Accepted(uow, result) => eventStore.commit(uow.events)
-      case Rejected(message) =>
+      case Rejected(_) =>
     }
   }
 
