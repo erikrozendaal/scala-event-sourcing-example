@@ -15,13 +15,13 @@ class CommandBus(eventStore: EventStore) {
     }
   }
 
-  def register[T <: Command](handler: CommandHandler[T, _]) {
+  def register[T <: Command](handler: CommandHandler[T, _, _]) {
     handlers.put(handler.commandType, handler)
   }
 
-  def register[T <: Command, R](handler: T => Behavior[R])(implicit m : Manifest[T]) {
+  def register[T <: Command](handler: T => Behavior[Any, Any])(implicit m : Manifest[T]) {
     register(CommandHandler(handler))
   }
 
-  private val handlers: MMap[Class[_], CommandHandler[_, _]] = MMap.empty
+  private val handlers: MMap[Class[_], CommandHandler[_, _, _]] = MMap.empty
 }

@@ -24,7 +24,7 @@ sealed trait Invoice extends AggregateRoot {
 }
 
 object Invoice extends AggregateFactory[Invoice] {
-  def create(invoiceId: Identifier): Behavior[DraftInvoice] = created(invoiceId, InvoiceCreated())
+  def create(invoiceId: Identifier): Behavior[Nothing, DraftInvoice] = created(invoiceId, InvoiceCreated())
 
   protected[this] def applyEvent = created
 
@@ -38,11 +38,11 @@ case class DraftInvoice(
   items: Map[Int, InvoiceItem] = Map.empty
 ) extends Invoice {
 
-  def changeRecipient(recipient: Option[String]): Behavior[DraftInvoice] = {
+  def changeRecipient(recipient: Option[String]): Behavior[Nothing, DraftInvoice] = {
     recipientChanged(InvoiceRecipientChanged(recipient.map(_.trim).filter(_.nonEmpty)))
   }
 
-  def addItem(description: String, amount: BigDecimal): Behavior[DraftInvoice] = {
+  def addItem(description: String, amount: BigDecimal): Behavior[Nothing, DraftInvoice] = {
     val item = InvoiceItem(nextItemId, description, amount)
     itemAdded(InvoiceItemAdded(item, totalAmount + amount))
   }

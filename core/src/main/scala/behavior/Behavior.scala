@@ -23,31 +23,31 @@ case class UnitOfWork(
   }
 }
 
-trait Reaction[+T] {
+trait Reaction[+Error, +Result] {
   def changes: List[UncommittedEvent]
 }
 
-case class Accepted[+T](uow: UnitOfWork, result: T) extends Reaction[T] {
+case class Accepted[+Result](uow: UnitOfWork, result: Result) extends Reaction[Nothing, Result] {
   def changes = uow.events
 }
 
-case class Rejected(message: String) extends Reaction[Nothing] {
+case class Rejected[+Error](message: Error) extends Reaction[Error, Nothing] {
   def changes = Nil
 }
 
-trait Behavior[+A] {
-  def apply(uow: UnitOfWork): Reaction[A]
+trait Behavior[+Error, +Result] {
+  def apply(uow: UnitOfWork): Reaction[Error, Result]
 
-  def map[B](f: A => B) = flatMap(a => accept(f(a)))
+  def map[B](f: Result => B) = flatMap(a => accept(f(a)))
 
-  def flatMap[B](next: A => Behavior[B]) = Behavior {uow =>
+  def flatMap[E1 >: Error, B](next: Result => Behavior[E1, B]) = Behavior {uow =>
     this(uow) match {
       case Accepted(uow, result) => next(result)(uow)
-      case Rejected(message) => Rejected(message)
+      case Rejected(error) => Rejected(error)
     }
   }
 
-  def andThen[B](next: Behavior[B]) = this flatMap (_ => next)
+  def andThen[E1 >: Error, B](next: Behavior[E1, B]) = this flatMap (_ => next)
 
   def trigger = apply(UnitOfWork(Nil, null))
 
@@ -57,7 +57,7 @@ trait Behavior[+A] {
 }
 
 object Behavior {
-  def apply[T](callback: UnitOfWork => Reaction[T]) = new Behavior[T] {
+  def apply[Error, Result](callback: UnitOfWork => Reaction[Error, Result]) = new Behavior[Error, Result] {
     def apply(uow: UnitOfWork) = callback(uow)
   }
 }

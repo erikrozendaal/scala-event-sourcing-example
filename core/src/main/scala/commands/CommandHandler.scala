@@ -3,14 +3,14 @@ package commands
 
 import behavior._
 
-abstract class CommandHandler[T <: Command, R](implicit m: Manifest[T]) {
-  def apply(command: T): Behavior[R]
+abstract class CommandHandler[T <: Command, E, R](implicit m: Manifest[T]) {
+  def apply(command: T): Behavior[E, R]
   def commandType: Class[_] = m.erasure
   def invokeWithCommand(command: Command) = apply(command.asInstanceOf[T])
 }
 
 object CommandHandler {
-  def apply[T <: Command, R](callback: T => Behavior[R])(implicit m: Manifest[T]) = new CommandHandler[T, R] {
+  def apply[T <: Command, E, R](callback: T => Behavior[E, R])(implicit m: Manifest[T]) = new CommandHandler[T, E, R] {
     def apply(command: T) = callback(command)
   }
 }
