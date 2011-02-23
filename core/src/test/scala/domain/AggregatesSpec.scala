@@ -15,20 +15,22 @@ class AggregatesSpec extends org.specs.Specification {
     private def updated = when[ExampleEvent] {event => copy(content = event.content)}
   }
 
-  object TestAR1 extends AggregateFactory[TestAR1] {
-    def create(id: Identifier, content: String) = created(id, ExampleEvent(content))
+  case class InitialTestAR1(id: Identifier) extends AggregateRoot {
+    type Event = ExampleEvent
 
-    protected[this] def applyEvent = created
+    def update(content: String) = updated(ExampleEvent(content))
 
-    private def created = when[ExampleEvent] {event => TestAR1(event.source, event.content)}
+    protected[this] def applyEvent = updated
+
+    private def updated = when[ExampleEvent] {event => TestAR1(id, event.content)}
   }
 
-  val subject = new Aggregates(TestAR1)
+  val subject = new Aggregates(InitialTestAR1.apply _)
 
   val TestId1 = newIdentifier
-  val justCreated = TestAR1.create(TestId1, "hello").result
+  val justCreated = InitialTestAR1(TestId1).update("hello").result
   val updated = behavior.accept(justCreated).flatMap(_.update("world")).result
-  val different = TestAR1.create(TestId1, "different?").result
+  val different = InitialTestAR1(TestId1).update("different?").result
 
   "new aggregate store" should {
     subject.putIfNewer(updated, 2)

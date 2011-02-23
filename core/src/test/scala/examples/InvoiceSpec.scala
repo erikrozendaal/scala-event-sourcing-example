@@ -11,11 +11,11 @@ import reports._
 case class InvoiceItem(id: Int, description: String, amount: BigDecimal)
 
 trait InvoiceEvent
-case class InvoiceCreated() extends InvoiceEvent
+case class InvoiceDraftCreated() extends InvoiceEvent
 case class InvoiceRecipientChanged(recipient: Option[String]) extends InvoiceEvent
 case class InvoiceItemAdded(item: InvoiceItem, totalAmount: BigDecimal) extends InvoiceEvent
 
-case class CreateInvoice(invoiceId: Identifier) extends Command
+case class CreateDraftInvoice(invoiceId: Identifier) extends Command
 case class ChangeInvoiceRecipient(invoiceId: Identifier, recipient: Option[String]) extends Command
 case class AddInvoiceItem(invoiceId: Identifier, description: String, price: BigDecimal) extends Command
 
@@ -23,12 +23,12 @@ sealed trait Invoice extends AggregateRoot {
   protected[this] type Event = InvoiceEvent
 }
 
-object Invoice extends AggregateFactory[Invoice] {
-  def create(invoiceId: Identifier): Behavior[Nothing, DraftInvoice] = created(invoiceId, InvoiceCreated())
+case class InitialInvoice(protected[this] val id: Identifier) extends Invoice {
+  def createDraft: Behavior[Nothing, DraftInvoice] = created(InvoiceDraftCreated())
 
   protected[this] def applyEvent = created
 
-  private def created = when[InvoiceCreated] {event => DraftInvoice(event.source)}
+  private def created = when[InvoiceDraftCreated] {event => DraftInvoice(event.source)}
 }
 
 case class DraftInvoice(
@@ -79,13 +79,13 @@ class InvoiceSpec extends Specification {
   val invoiceId = newIdentifier
 
   val eventStore = new eventstore.MemoryEventStore
-  val aggregates = new Aggregates(Invoice)
+  val aggregates = new Aggregates(InitialInvoice)
   eventStore.addListener(committed => aggregates.applyEvent(committed))
   val commands = new CommandBus(eventStore)
   val repository = new AggregateRepository[AggregateRoot](aggregates)
 
   commands register {
-    command: CreateInvoice => Invoice.create(command.invoiceId)
+    command: CreateDraftInvoice => InitialInvoice(command.invoiceId).createDraft
   }
   commands register {
     command: ChangeInvoiceRecipient =>
@@ -98,14 +98,14 @@ class InvoiceSpec extends Specification {
 
   "client" should {
     "be able to create invoice" in {
-      commands.send(CreateInvoice(invoiceId))
+      commands.send(CreateDraftInvoice(invoiceId))
 
-      eventStore.load(invoiceId) must contain(Committed(invoiceId, 1, InvoiceCreated()))
+      eventStore.load(invoiceId) must contain(Committed(invoiceId, 1, InvoiceDraftCreated()))
     }
   }
 
   "new invoice" should {
-    eventStore.commit(Iterable(Uncommitted(invoiceId, 1, InvoiceCreated())))
+    eventStore.commit(Iterable(Uncommitted(invoiceId, 1, InvoiceDraftCreated())))
     "allow items to be added" in {
       commands.send(AddInvoiceItem(invoiceId, "beverage", 2.95))
       commands.send(AddInvoiceItem(invoiceId, "sandwich", 4.95))

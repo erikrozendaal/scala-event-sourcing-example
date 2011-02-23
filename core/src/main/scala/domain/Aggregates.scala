@@ -3,7 +3,7 @@ package domain
 
 import scala.collection.mutable.{Map => MMap}
 
-class Aggregates(factories: AggregateFactory[_]*) extends EventProcessor[DomainEvent, Unit] {
+class Aggregates(factories: AggregateFactory*) extends EventProcessor[DomainEvent, Unit] {
 
   def get(aggregate: Identifier): Option[(Revision, AggregateRoot)] = {
     aggregates synchronized {aggregates.get(aggregate)}
@@ -34,7 +34,7 @@ class Aggregates(factories: AggregateFactory[_]*) extends EventProcessor[DomainE
   private val aggregates: MMap[Identifier, (Revision, AggregateRoot)] = MMap.empty
 
   private def buildUsingFactory(committedEvent: CommittedEvent): AggregateRoot = {
-    val factory = factories.find(_.internalApplyEvent.isDefinedAt(committedEvent)).getOrElse(error("no factory for event " + committedEvent))
-    factory.internalApplyEvent(committedEvent)
+    val initial = factories.find(_.apply(committedEvent.source).internalApplyEvent.isDefinedAt(committedEvent)).getOrElse(error("no factory for event " + committedEvent))
+    initial(committedEvent.source).internalApplyEvent(committedEvent)
   }
 }

@@ -10,7 +10,7 @@ import _root_.java.util.Date
 import com.zilverline.es2.domain.Aggregates
 import com.zilverline.es2.eventstore.{ReflectionTypeHints, JsonSerializer, SquerylEventStore}
 import com.zilverline.es2.reports.Reports
-import domain.Invoice
+import example.domain._
 import com.zilverline.es2.commands.CommandBus
 import commands.CreateDraftInvoice
 import reports.InvoiceReport
@@ -26,7 +26,7 @@ object DependencyFactory extends Factory {
   implicit object time extends FactoryMaker(Helpers.now _)
 
   implicit object eventSerializer extends FactoryMaker(new JsonSerializer()(Serialization.formats(new ReflectionTypeHints)))
-  implicit object aggregates extends FactoryMaker(new Aggregates(Invoice))
+  implicit object aggregates extends FactoryMaker(new Aggregates(InitialInvoice))
   implicit object reports extends FactoryMaker({
     val result = new Reports
     result.register(InvoiceReport())
@@ -41,7 +41,7 @@ object DependencyFactory extends Factory {
   implicit object commands extends FactoryMaker({
     val result = new CommandBus(eventStore.vend)
     result register {
-      command: CreateDraftInvoice => Invoice.createDraft(command.invoiceId)
+      command: CreateDraftInvoice => InitialInvoice(command.invoiceId).createDraft
     }
     result
   })
