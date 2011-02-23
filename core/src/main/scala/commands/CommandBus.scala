@@ -9,7 +9,7 @@ import scala.collection.mutable.{Map => MMap}
 class CommandBus(eventStore: EventStore) {
   def send(command: Command) {
     val handler = handlers.getOrElse(command.getClass, throw new IllegalArgumentException("no handler for found command: " + command))
-    handler.invokeWithCommand(command)(UnitOfWork(Nil, eventStore)) match {
+    handler.invokeWithCommand(command)(UnitOfWork(Nil)) match {
       case Accepted(uow, result) => eventStore.commit(uow.events)
       case Rejected(_) =>
     }

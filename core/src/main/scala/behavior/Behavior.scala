@@ -5,9 +5,10 @@ case class EventSourceState(id: Identifier, original: Revision, current: Revisio
 
 case class UnitOfWork(
   events: List[UncommittedEvent],
-  eventStore: eventstore.EventStore,
-  eventSources: Map[Identifier, EventSourceState] = Map.empty
-) {
+  eventSources: Map[Identifier, EventSourceState] = Map.empty) {
+
+  def getEventSource(source: Identifier): Option[Any] = eventSources.get(source).map(_.value)
+
   def trackEventSource(source: Identifier, revision: Revision, value: Any) = {
     require(!eventSources.contains(source), "already tracking " + source)
     copy(eventSources = eventSources + (source -> EventSourceState(source, revision, revision, value)))
@@ -49,7 +50,7 @@ trait Behavior[+Error, +Result] {
 
   def andThen[E1 >: Error, B](next: Behavior[E1, B]) = this flatMap (_ => next)
 
-  def trigger = apply(UnitOfWork(Nil, null))
+  def trigger = apply(UnitOfWork(Nil))
 
   def result = trigger match {
     case Accepted(_, result) => result

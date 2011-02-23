@@ -42,7 +42,9 @@ trait AggregateRoot {
   }
 
   private[domain] def internalId = id
+
   private[domain] type InternalEvent = Event
+
   private[domain] def internalApplyEvent = applyEvent
 }
 
@@ -63,4 +65,20 @@ trait AggregateFactory[-AR <: AggregateRoot] {
   }
 
   private[domain] def internalApplyEvent = applyEvent
+}
+
+class AggregateRepository[-AR <: AggregateRoot](aggregates: Aggregates)(implicit m: Manifest[AR]) {
+  def get[T <: AR](id: Identifier): Behavior[Nothing, Option[T]] = Behavior {
+    uow =>
+      uow.getEventSource(id) map {
+        result => Accepted(uow, Some(result.asInstanceOf[T]))
+      } getOrElse {
+        aggregates.get(id) map {
+          result =>
+            Accepted(uow.trackEventSource(id, result._1, result._2), Some(result._2.asInstanceOf[T]))
+        } getOrElse {
+          Accepted(uow, None)
+        }
+      }
+  }
 }

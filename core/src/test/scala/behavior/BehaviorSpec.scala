@@ -6,7 +6,7 @@ import eventstore._
 class BehaviorSpec extends org.specs.Specification {
 
   val eventStore = new MemoryEventStore
-  val emptyUnitOfWork = UnitOfWork(Nil, eventStore)
+  val emptyUnitOfWork = UnitOfWork(Nil)
 
   val Source = newIdentifier
 

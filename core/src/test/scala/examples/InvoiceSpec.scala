@@ -76,23 +76,24 @@ case class InvoiceDocument(
 
 class InvoiceSpec extends Specification {
 
-  implicit val InvoiceFactory = Invoice
-
   val invoiceId = newIdentifier
 
   val eventStore = new eventstore.MemoryEventStore
+  val aggregates = new Aggregates(Invoice)
+  eventStore.addListener(committed => aggregates.applyEvent(committed))
   val commands = new CommandBus(eventStore)
+  val repository = new AggregateRepository[AggregateRoot](aggregates)
 
   commands register {
     command: CreateInvoice => Invoice.create(command.invoiceId)
   }
   commands register {
     command: ChangeInvoiceRecipient =>
-      load[DraftInvoice](command.invoiceId) flatMap (_.changeRecipient(command.recipient))
+      repository.get[DraftInvoice](command.invoiceId) flatMap (_.get.changeRecipient(command.recipient))
   }
   commands register {
     command: AddInvoiceItem =>
-      load[DraftInvoice](command.invoiceId) flatMap (_.addItem(command.description, command.price))
+      repository.get[DraftInvoice](command.invoiceId) flatMap (_.get.addItem(command.description, command.price))
   }
 
   "client" should {
