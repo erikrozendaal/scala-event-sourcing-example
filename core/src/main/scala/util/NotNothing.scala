@@ -1,4 +1,5 @@
 package com.zilverline.es2
+package util
 
 // NotNothing marker to avoid inferring nothing as valid type,
 // which will cause runtime class cast errors.
