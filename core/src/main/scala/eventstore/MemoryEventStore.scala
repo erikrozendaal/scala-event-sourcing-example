@@ -2,30 +2,27 @@ package com.zilverline.es2
 package eventstore
 
 import scala.collection.mutable.{Map => MMap}
-import scala.collection.immutable.Queue
 
 class MemoryEventStore extends EventStore {
 
-  def commit(events: Iterable[UncommittedEvent]) {
-    if (events.isEmpty) return
-    verifyEventsBeforeCommit(events)
+  def commit(attempt: Commit) {
+    if (attempt.events.isEmpty) return
 
     synchronized {
-      val first = events.head
-      val stored = storedEvents.getOrElse(first.source, Queue.empty)
-      val expectedSequence = stored.size + 1
-      if (expectedSequence != first.sequence)
-        throw new OptimisticLockingException("sequence number does not match expected <" + expectedSequence + "> was <" + first.sequence + ">")
+      val stored = storedEvents.getOrElse(attempt.source, IndexedSeq.empty)
+      val actual = stored.size
+      if (attempt.revision != actual)
+        throw new OptimisticLockingException("sequence number does not match expected <" + attempt.revision + "> was <" + actual + ">")
 
-      val committed = events.map(event => Committed(event.source, event.sequence, event.payload))
-      storedEvents.put(first.source, stored ++ committed)
+      val committed = makeCommittedEvents(attempt)
+      storedEvents.put(attempt.source, stored ++ committed)
       dispatchEvents(committed)
     }
   }
 
-  def load(source: Identifier): Iterable[CommittedEvent] = synchronized {
-    storedEvents.getOrElse(source, Iterable.empty)
+  def load(source: Identifier): Seq[CommittedEvent] = synchronized {
+    storedEvents.getOrElse(source, Seq.empty)
   }
 
-  private val storedEvents: MMap[Identifier, Queue[CommittedEvent]] = MMap.empty
+  private val storedEvents: MMap[Identifier, IndexedSeq[CommittedEvent]] = MMap.empty
 }

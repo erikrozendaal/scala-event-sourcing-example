@@ -6,7 +6,7 @@ import org.specs.Specification
 import behavior._
 import commands._
 import domain._
-import reports._
+import eventstore.Commit
 
 case class InvoiceItem(id: Int, description: String, amount: BigDecimal)
 
@@ -105,7 +105,7 @@ class InvoiceSpec extends Specification {
   }
 
   "new invoice" should {
-    eventStore.commit(Iterable(Uncommitted(invoiceId, 1, InvoiceDraftCreated())))
+    eventStore.commit(Commit(invoiceId, 0, Seq(InvoiceDraftCreated())))
     "allow items to be added" in {
       commands.send(AddInvoiceItem(invoiceId, "beverage", 2.95))
       commands.send(AddInvoiceItem(invoiceId, "sandwich", 4.95))

@@ -22,14 +22,14 @@ class InstructionsSpec extends Specification {
   val commands = new CommandBus(eventStore)
   val reports = new Reports
 
-  commands.register(CommandHandler.commitCommandHandler)
+  commands.register(CommandHandler.updateCommandHandler)
   reports.register(InstructionReport())
 
   eventStore.addListener(commit => reports.applyEvent(commit))
 
   "instruction" should {
     "show up in index when added" in {
-      commands.send(Commit(Source, 0, InstructionAdded("hello")))
+      commands.send(Update(Source, 0, InstructionAdded("hello")))
 
       reports.queryable[InstructionReport].query(_.instructions) must contain("hello")
     }

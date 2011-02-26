@@ -1,17 +1,25 @@
 package com.zilverline.es2
 package eventstore
 
-import collection.immutable.Queue
-
 class OptimisticLockingException(message: String) extends RuntimeException(message)
+
+case class Commit(source: Identifier, revision: Revision, events: Seq[DomainEvent])
 
 trait EventStore {
   type EventStoreListener = CommittedEvent => Unit
-  def commit(events: Iterable[UncommittedEvent])
-  def load(source: Identifier): Iterable[CommittedEvent]
+
+  def commit(attempt: Commit)
+
+  def load(source: Identifier): Seq[CommittedEvent]
 
   def addListener(callback: EventStoreListener) {
     synchronized {listeners = listeners :+ callback}
+  }
+
+  protected[this] def makeCommittedEvents(commit: Commit) = {
+    commit.events.zipWithIndex map {
+      case (event, index) => Committed(commit.source, commit.revision + 1 + index, event)
+    }
   }
 
   protected[this] def dispatchEvents(events: Iterable[CommittedEvent]) {
@@ -19,11 +27,6 @@ trait EventStore {
     for (event <- events; listener <- listeners) listener(event)
   }
 
-  protected[this] def verifyEventsBeforeCommit(events: Iterable[UncommittedEvent]): Unit = {
-    require(events.forall(_.source == events.head.source), "only a single source can be updated in a single commit")
-    require(events.zip(events.tail).forall(pair => pair._1.sequence + 1 == pair._2.sequence), "events must be in proper order")
-  }
-
   @volatile
-  private var listeners: Queue[EventStoreListener] = Queue.empty
+  private var listeners: IndexedSeq[EventStoreListener] = IndexedSeq.empty
 }

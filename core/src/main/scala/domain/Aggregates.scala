@@ -20,11 +20,11 @@ class Aggregates(factories: AggregateFactory*) extends EventProcessor[DomainEven
   def applyEvent = committedEvent => {
     aggregates synchronized {
       val current = get(committedEvent.source)
-      val expectedRevision = current.map(_._1 + 1L).getOrElse(InitialRevision)
+      val expectedSequence = 1L + current.map(_._1).getOrElse(InitialRevision)
 
-      require(committedEvent.sequence <= expectedRevision, "event from the future: " + committedEvent + ", expected revision " + expectedRevision)
+      require(committedEvent.sequence <= expectedSequence, "event from the future: " + committedEvent + ", expected sequence " + expectedSequence)
 
-      if (committedEvent.sequence == expectedRevision) {
+      if (committedEvent.sequence == expectedSequence) {
         val updated = current.map(_._2.internalApplyEvent(committedEvent)).getOrElse(buildUsingFactory(committedEvent))
         aggregates.put(committedEvent.source, (committedEvent.sequence, updated))
       }

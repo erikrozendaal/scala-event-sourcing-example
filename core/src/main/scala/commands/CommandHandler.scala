@@ -14,8 +14,8 @@ object CommandHandler {
     def apply(command: T) = callback(command)
   }
 
-  def commitCommandHandler = CommandHandler {
-    command: Commit =>
+  def updateCommandHandler = CommandHandler {
+    command: Update =>
       trackEventSource(command.source, command.revision, ())
         .andThen(modifyEventSource(command.source, command.event)(_ => ()))
   }

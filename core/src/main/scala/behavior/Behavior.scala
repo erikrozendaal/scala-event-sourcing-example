@@ -1,39 +1,41 @@
 package com.zilverline.es2
 package behavior
 
-case class EventSourceState(id: Identifier, original: Revision, current: Revision, value: Any)
+case class EventSourceState[+A](id: Identifier, original: Revision, current: Revision, value: A, changes: IndexedSeq[DomainEvent]) {
+  def modify[B, E <: DomainEvent](event: E)(callback: Uncommitted[E] => B): EventSourceState[B] = {
+    val nextRevision = current + 1
+    val updatedValue = callback(Uncommitted(id, nextRevision, event))
+    copy(current = nextRevision, value = updatedValue, changes = changes :+ event)
+  }
+}
 
 case class UnitOfWork(
-  events: List[UncommittedEvent],
-  eventSources: Map[Identifier, EventSourceState] = Map.empty) {
+  eventSources: Map[Identifier, EventSourceState[Any]] = Map.empty) {
 
   def getEventSource(source: Identifier): Option[Any] = eventSources.get(source).map(_.value)
 
   def trackEventSource(source: Identifier, revision: Revision, value: Any) = {
     require(!eventSources.contains(source), "already tracking " + source)
-    copy(eventSources = eventSources + (source -> EventSourceState(source, revision, revision, value)))
+    copy(eventSources = eventSources + (source -> EventSourceState(source, revision, revision, value, IndexedSeq.empty)))
   }
 
   def modifyEventSource[A <: DomainEvent, B](source: Identifier, event: A)(callback: Uncommitted[A] => B) = {
-    val originalState = eventSources.getOrElse(source, EventSourceState(source, 0, 0, None))
-    val nextRevision = originalState.current + 1
-    val uncommitted = Uncommitted(source, nextRevision, event)
-    val updatedValue = callback(uncommitted)
-    val updatedState = originalState.copy(current = nextRevision, value = updatedValue)
-    (copy(uncommitted :: events, eventSources = eventSources.updated(source, updatedState)), updatedValue)
+    val originalState = eventSources.getOrElse(source, EventSourceState(source, 0, 0, None, IndexedSeq.empty))
+    val updatedState = originalState.modify(event)(callback)
+    (copy(eventSources.updated(source, updatedState)), updatedState.value)
   }
 }
 
 sealed trait Reaction[+Error, +Result] {
-  def changes: List[UncommittedEvent]
+  def changes(source: Identifier): Seq[DomainEvent]
 }
 
 case class Accepted[+Result](uow: UnitOfWork, result: Result) extends Reaction[Nothing, Result] {
-  def changes = uow.events
+  def changes(source: Identifier) = uow.eventSources.get(source).map(_.changes).getOrElse(Seq.empty)
 }
 
 case class Rejected[+Error](message: Error) extends Reaction[Error, Nothing] {
-  def changes = Nil
+  def changes(source: Identifier) = Nil
 }
 
 trait Behavior[+Error, +Result] {
@@ -50,7 +52,7 @@ trait Behavior[+Error, +Result] {
 
   def andThen[E >: Error, B](next: Behavior[E, B]) = this flatMap (_ => next)
 
-  def trigger = apply(UnitOfWork(Nil))
+  def trigger = apply(UnitOfWork())
 
   def result = (trigger: @unchecked) match {
     case Accepted(_, result) => result

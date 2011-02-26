@@ -37,22 +37,22 @@ class SquerylEventStore(serializer: Serializer) extends EventStore {
 
   private implicit def identifierToString(identifier: Identifier): String = identifier.toString
 
-  def commit(events: Iterable[UncommittedEvent]) {
-    if (events.isEmpty) return
-    verifyEventsBeforeCommit(events)
+  def commit(attempt: Commit) {
+    if (attempt.events.isEmpty) return
 
     synchronized {
-      insertEvents(events)
-      dispatchEvents(events map (event => Committed(event.source, event.sequence, event.payload)))
+      val committed = makeCommittedEvents(attempt)
+      insertEvents(attempt, committed)
+      dispatchEvents(committed)
     }
   }
 
-  def load(source: Identifier): Iterable[CommittedEvent] = transaction {
+  def load(source: Identifier): Seq[CommittedEvent] = transaction {
     val records = from(EventStreamRecords)(r =>
       where(r.source === (source: String))
         .select(r)
         .orderBy(r.sequence asc))
-    records.map(record => Committed(record.source, record.sequence, read(record.event)))
+    records.map(record => Committed(record.source, record.sequence, read(record.event))).toSeq
   }
 
   def replayAllEvents {
@@ -67,34 +67,33 @@ class SquerylEventStore(serializer: Serializer) extends EventStore {
 
   private def read = serializer.deserialize _
 
-  private def createEventStream(first: UncommittedEvent): Any = {
+  private def createEventStream(attempt: Commit) {
     try {
-      EventStreams.insert(EventStream(first.source, first.sequence))
+      EventStreams.insert(EventStream(attempt.source, attempt.events.size))
     } catch {
       case exception =>
         val message = exception.getMessage.toLowerCase
         if (message.contains("unique") || message.contains("primary"))
-          throw new OptimisticLockingException("event stream already exists for event <" + first + ">")
+          throw new OptimisticLockingException("event stream already exists for event source <" + attempt.source + ">")
         else
           throw exception
     }
   }
 
-  private def updateEventStream(first: UncommittedEvent): Unit = {
+  private def updateEventStream(attempt: Commit) {
     val count = update(EventStreams)(r =>
-      where(r.source === (first.source: String) and r.revision === first.sequence - 1)
-        .set(r.revision := first.sequence))
+      where(r.source === (attempt.source: String) and r.revision === attempt.revision)
+        .set(r.revision := r.revision.~ + attempt.events.size))
     if (count == 0)
-      throw new OptimisticLockingException("sequence number <" + first.sequence + "> does not match expected")
+      throw new OptimisticLockingException("sequence number <" + attempt.revision + "> does not match expected for event source <" + attempt.source + ">")
   }
 
-  private def insertEvents(events: Iterable[UncommittedEvent]) {
-    val first = events.head
+  private def insertEvents(attempt: Commit, events: Iterable[CommittedEvent]) {
     transaction {
-      if (first.sequence == InitialRevision) {
-        createEventStream(first)
+      if (attempt.revision == 0) {
+        createEventStream(attempt)
       } else {
-        updateEventStream(first)
+        updateEventStream(attempt)
       }
       val records = events.map(event => EventStreamRecord(0, event.source, event.sequence, write(event.payload)))
       EventStreamRecords.insert(records)
