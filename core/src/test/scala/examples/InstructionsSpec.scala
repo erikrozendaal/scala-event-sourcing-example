@@ -4,6 +4,7 @@ package examples
 import org.specs.Specification
 
 import reports._
+import commands._
 
 case class InstructionAdded(text: String)
 
@@ -18,15 +19,17 @@ class InstructionsSpec extends Specification {
   val Source = newIdentifier
 
   val eventStore = new eventstore.MemoryEventStore
+  val commands = new CommandBus(eventStore)
   val reports = new Reports
 
+  commands.register(CommandHandler.commitCommandHandler)
   reports.register(InstructionReport())
 
   eventStore.addListener(commit => reports.applyEvent(commit))
 
   "instruction" should {
     "show up in index when added" in {
-      eventStore.commit(Iterable(Uncommitted(Source, 1, InstructionAdded("hello"))))
+      commands.send(Commit(Source, 0, InstructionAdded("hello")))
 
       reports.queryable[InstructionReport].query(_.instructions) must contain("hello")
     }

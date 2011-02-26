@@ -13,8 +13,9 @@ class MemoryEventStore extends EventStore {
     synchronized {
       val first = events.head
       val stored = storedEvents.getOrElse(first.source, Queue.empty)
-      if (stored.size + 1 != first.sequence)
-        throw new OptimisticLockingException("sequence number does not match expected <" + stored.size + "> was <" + first.sequence + ">")
+      val expectedSequence = stored.size + 1
+      if (expectedSequence != first.sequence)
+        throw new OptimisticLockingException("sequence number does not match expected <" + expectedSequence + "> was <" + first.sequence + ">")
 
       val committed = events.map(event => Committed(event.source, event.sequence, event.payload))
       storedEvents.put(first.source, stored ++ committed)

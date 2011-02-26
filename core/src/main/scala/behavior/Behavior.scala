@@ -24,7 +24,7 @@ case class UnitOfWork(
   }
 }
 
-trait Reaction[+Error, +Result] {
+sealed trait Reaction[+Error, +Result] {
   def changes: List[UncommittedEvent]
 }
 
@@ -41,18 +41,18 @@ trait Behavior[+Error, +Result] {
 
   def map[B](f: Result => B) = flatMap(a => accept(f(a)))
 
-  def flatMap[E1 >: Error, B](next: Result => Behavior[E1, B]) = Behavior {uow =>
+  def flatMap[E >: Error, B](next: Result => Behavior[E, B]) = Behavior {uow =>
     this(uow) match {
       case Accepted(uow, result) => next(result)(uow)
       case Rejected(error) => Rejected(error)
     }
   }
 
-  def andThen[E1 >: Error, B](next: Behavior[E1, B]) = this flatMap (_ => next)
+  def andThen[E >: Error, B](next: Behavior[E, B]) = this flatMap (_ => next)
 
   def trigger = apply(UnitOfWork(Nil))
 
-  def result = trigger match {
+  def result = (trigger: @unchecked) match {
     case Accepted(_, result) => result
   }
 }

@@ -14,7 +14,4 @@ package object behavior {
       val (updated, result) = uow.modifyEventSource(source, event)(f)
       Accepted(updated, result)
   }
-
-  def guard(condition: Boolean, message: => String) =
-    if (condition) accept() else reject(message)
 }
