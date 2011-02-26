@@ -64,8 +64,9 @@ class AggregatesSpec extends org.specs.Specification {
       subject.get(TestId1) must beEqualTo(Some(2, updated))
     }
 
-    "fail on unknown event type" in {
-      subject applyEvent Committed(TestId1, 1, AnotherEvent("unknown")) must throwA[RuntimeException]
+    "ignore unknown event type" in {
+      subject applyEvent Committed(TestId1, 1, AnotherEvent("unknown"))
+      subject.get(TestId1) must beNone
     }
   }
 }

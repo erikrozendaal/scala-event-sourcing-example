@@ -12,6 +12,19 @@
 	<span class="lift:helloWorld.howdy">
 	  Welcome to your Lift app at <span id="time">Time goes here</span>
 	</span>
+    </p>
+
+    <div class="lift:NewsItems.list">
+        <ol>
+            <li class="newsitem">a news item</li>
+        </ol>
+    </div>
+
+    <div class="lift:NewsItems.add?form=post">
+        <p><label>Content: <input name="content"/></label></p>
+
+        <p><input type="submit" value="Add news item"/></p>
+    </div>
 
     <div class="lift:Invoices.create?form=post">
         <span class="submit"/>
@@ -20,8 +33,6 @@
     <div class="lift:Invoices.list">
         <p class="id">an invoice id</p>
     </div>
-    </p>
 </div>
 </body>
 </html>
-

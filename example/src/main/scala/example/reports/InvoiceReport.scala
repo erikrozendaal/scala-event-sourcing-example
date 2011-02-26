@@ -8,6 +8,6 @@ case class InvoiceDocument(invoiceId: Identifier)
 
 case class InvoiceReport(invoices: List[InvoiceDocument] = Nil) extends Report[InvoiceEvent] {
   def applyEvent = committed => committed.payload match {
-    case event: InvoiceCreated => copy(InvoiceDocument(committed.source) :: invoices)
+    case InvoiceCreated() => copy(InvoiceDocument(committed.source) :: invoices)
   }
 }

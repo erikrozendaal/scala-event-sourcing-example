@@ -11,9 +11,9 @@ import com.zilverline.es2.domain.Aggregates
 import com.zilverline.es2.eventstore.{ReflectionTypeHints, JsonSerializer, SquerylEventStore}
 import com.zilverline.es2.reports.Reports
 import example.domain._
-import com.zilverline.es2.commands.CommandBus
 import commands.CreateDraftInvoice
-import reports.InvoiceReport
+import reports.{NewsItemReport, InvoiceReport}
+import com.zilverline.es2.commands.{CommandHandler, CommandBus}
 
 /**
  * A factory for generating new instances of Date.  You can create
@@ -30,6 +30,7 @@ object DependencyFactory extends Factory {
   implicit object reports extends FactoryMaker({
     val result = new Reports
     result.register(InvoiceReport())
+    result.register(NewsItemReport())
     result
   })
   implicit object eventStore extends FactoryMaker({
@@ -43,6 +44,7 @@ object DependencyFactory extends Factory {
     result register {
       command: CreateDraftInvoice => InitialInvoice(command.invoiceId).createDraft
     }
+    result.register(CommandHandler.updateCommandHandler)
     result
   })
 

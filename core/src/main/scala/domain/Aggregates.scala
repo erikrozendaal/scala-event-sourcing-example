@@ -25,16 +25,16 @@ class Aggregates(factories: AggregateFactory*) extends EventProcessor[DomainEven
       require(committedEvent.sequence <= expectedSequence, "event from the future: " + committedEvent + ", expected sequence " + expectedSequence)
 
       if (committedEvent.sequence == expectedSequence) {
-        val updated = current.map(_._2.internalApplyEvent(committedEvent)).getOrElse(buildUsingFactory(committedEvent))
-        aggregates.put(committedEvent.source, (committedEvent.sequence, updated))
+        val updated = current.map(_._2.internalApplyEvent(committedEvent)).orElse(buildUsingFactory(committedEvent))
+        updated.foreach(u => aggregates.put(committedEvent.source, (committedEvent.sequence, u)))
       }
     }
   }
 
   private val aggregates: MMap[Identifier, (Revision, AggregateRoot)] = MMap.empty
 
-  private def buildUsingFactory(committedEvent: CommittedEvent): AggregateRoot = {
-    val initial = factories.find(_.apply(committedEvent.source).internalApplyEvent.isDefinedAt(committedEvent)).getOrElse(error("no factory for event " + committedEvent))
-    initial(committedEvent.source).internalApplyEvent(committedEvent)
+  private def buildUsingFactory(committedEvent: CommittedEvent): Option[AggregateRoot] = {
+    val initial = factories.find(_.apply(committedEvent.source).internalApplyEvent.isDefinedAt(committedEvent))
+    initial.map(_.apply(committedEvent.source).internalApplyEvent(committedEvent))
   }
 }
