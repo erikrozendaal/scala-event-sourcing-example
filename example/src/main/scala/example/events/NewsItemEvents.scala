@@ -1,4 +1,4 @@
 package example.events
 
-trait NewsItemEvent
+sealed trait NewsItemEvent
 case class NewsItemAdded(content: String) extends NewsItemEvent

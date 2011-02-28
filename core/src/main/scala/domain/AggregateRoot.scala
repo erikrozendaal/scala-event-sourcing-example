@@ -43,17 +43,19 @@ trait AggregateRoot {
 }
 
 class AggregateRepository[-AR <: AggregateRoot](aggregates: Aggregates) {
-  def get[T <: AR](id: Identifier): Behavior[Nothing, Option[T]] = Behavior {
+  def get[T <: AR](id: Identifier): Behavior[Nothing, T] = Behavior {
     uow =>
       uow.getEventSource(id) map {
-        result => Accepted(uow, Some(result.asInstanceOf[T]))
+        result => Accepted(uow, result.asInstanceOf[T])
       } getOrElse {
         aggregates.get(id) map {
           result =>
-            Accepted(uow.trackEventSource(id, result._1, result._2), Some(result._2.asInstanceOf[T]))
+            Accepted(uow.trackEventSource(id, result._1, result._2), result._2.asInstanceOf[T])
         } getOrElse {
-          Accepted(uow, None)
+          throw new IllegalArgumentException("event source <" + id + "> not found")
         }
       }
   }
+
+  def update[A <: AR, B <: AR, E](id: Identifier)(f: A => Behavior[E, B]): Behavior[E, B] = get(id) flatMap f
 }

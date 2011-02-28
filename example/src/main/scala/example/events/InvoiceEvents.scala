@@ -1,5 +1,4 @@
 package example.events
 
-trait InvoiceEvent
-
+sealed trait InvoiceEvent
 case class InvoiceCreated() extends InvoiceEvent

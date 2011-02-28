@@ -12,7 +12,7 @@ class CommandHandlerSpec extends org.specs.Specification {
 
     val eventStore = new MemoryEventStore
     val commands = new CommandBus(eventStore)
-    commands register CommandHandler.updateCommandHandler
+    commands registerHandler CommandHandler.updateCommandHandler
 
     "commit event to new event source" in {
       commands.send(Update(AggregateIdentifier, InitialRevision, ExampleEvent("initial")))

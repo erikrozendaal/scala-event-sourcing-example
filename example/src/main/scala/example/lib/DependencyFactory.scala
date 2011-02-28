@@ -44,7 +44,7 @@ object DependencyFactory extends Factory {
     result register {
       command: CreateDraftInvoice => InitialInvoice(command.invoiceId).createDraft
     }
-    result.register(CommandHandler.updateCommandHandler)
+    result.registerHandler(CommandHandler.updateCommandHandler)
     result
   })
 

@@ -10,14 +10,15 @@ import eventstore.Commit
 
 case class InvoiceItem(id: Int, description: String, amount: BigDecimal)
 
-trait InvoiceEvent
+sealed trait InvoiceEvent
 case class InvoiceDraftCreated() extends InvoiceEvent
 case class InvoiceRecipientChanged(recipient: Option[String]) extends InvoiceEvent
 case class InvoiceItemAdded(item: InvoiceItem, totalAmount: BigDecimal) extends InvoiceEvent
 
-case class CreateDraftInvoice(invoiceId: Identifier) extends Command
-case class ChangeInvoiceRecipient(invoiceId: Identifier, recipient: Option[String]) extends Command
-case class AddInvoiceItem(invoiceId: Identifier, description: String, price: BigDecimal) extends Command
+sealed trait InvoiceCommand extends Command
+case class CreateDraftInvoice(invoiceId: Identifier) extends InvoiceCommand
+case class ChangeInvoiceRecipient(invoiceId: Identifier, recipient: Option[String]) extends InvoiceCommand
+case class AddInvoiceItem(invoiceId: Identifier, description: String, price: BigDecimal) extends InvoiceCommand
 
 sealed trait Invoice extends AggregateRoot {
   protected[this] type Event = InvoiceEvent
@@ -36,7 +37,7 @@ case class DraftInvoice(
   recipient_? : Boolean = false,
   nextItemId: Int = 1,
   items: Map[Int, InvoiceItem] = Map.empty
-) extends Invoice {
+  ) extends Invoice {
 
   def changeRecipient(recipient: Option[String]): Behavior[Nothing, DraftInvoice] = {
     recipientChanged(InvoiceRecipientChanged(recipient.map(_.trim).filter(_.nonEmpty)))
@@ -65,12 +66,13 @@ case class InvoiceDocument(
   recipient: Option[String] = None,
   items: Map[Int, InvoiceItem] = Map.empty,
   totalAmount: BigDecimal = 0
-) extends EventProcessor[InvoiceEvent, InvoiceDocument] {
+  ) extends EventProcessor[InvoiceEvent, InvoiceDocument] {
   def applyEvent = _.payload match {
-    case event: InvoiceRecipientChanged =>
-      copy(recipient = event.recipient)
-    case event: InvoiceItemAdded =>
-      copy(items = items + (event.item.id -> event.item), totalAmount = event.totalAmount)
+    case InvoiceDraftCreated() => this
+    case InvoiceRecipientChanged(recipient) =>
+      copy(recipient = recipient)
+    case InvoiceItemAdded(item, totalAmount) =>
+      copy(items = items + (item.id -> item), totalAmount = totalAmount)
   }
 }
 
@@ -84,16 +86,12 @@ class InvoiceSpec extends Specification {
   val commands = new CommandBus(eventStore)
   val repository = new AggregateRepository[AggregateRoot](aggregates)
 
-  commands register {
-    command: CreateDraftInvoice => InitialInvoice(command.invoiceId).createDraft
-  }
-  commands register {
-    command: ChangeInvoiceRecipient =>
-      repository.get[DraftInvoice](command.invoiceId) flatMap (_.get.changeRecipient(command.recipient))
-  }
-  commands register {
-    command: AddInvoiceItem =>
-      repository.get[DraftInvoice](command.invoiceId) flatMap (_.get.addItem(command.description, command.price))
+  commands.register[InvoiceCommand] {
+    case CreateDraftInvoice(invoiceId) => InitialInvoice(invoiceId).createDraft
+    case ChangeInvoiceRecipient(invoiceId, recipient) =>
+      repository.update(invoiceId) {invoice: DraftInvoice => invoice.changeRecipient(recipient)}
+    case AddInvoiceItem(invoiceId, description, price) =>
+      repository.update(invoiceId) {invoice: DraftInvoice => invoice.addItem(description, price)}
   }
 
   "client" should {

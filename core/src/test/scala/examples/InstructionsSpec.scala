@@ -10,7 +10,7 @@ case class InstructionAdded(text: String)
 
 case class InstructionReport(instructions: List[String] = List.empty) extends Report[InstructionAdded] {
   def applyEvent = {
-    case Payload(event: InstructionAdded) => copy(event.text :: instructions)
+    case Payload(InstructionAdded(text)) => copy(text :: instructions)
   }
 }
 
@@ -22,7 +22,7 @@ class InstructionsSpec extends Specification {
   val commands = new CommandBus(eventStore)
   val reports = new Reports
 
-  commands.register(CommandHandler.updateCommandHandler)
+  commands.registerHandler(CommandHandler.updateCommandHandler)
   reports.register(InstructionReport())
 
   eventStore.addListener(commit => reports.applyEvent(commit))

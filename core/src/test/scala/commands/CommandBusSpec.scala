@@ -20,7 +20,7 @@ class CommandBusSpec extends org.specs.Specification {
     var handlerInvoked = false
 
     def testHandler = CommandHandler {command: ExampleCommand => handlerInvoked = true; behavior.accept()}
-    subject.register(testHandler)
+    subject.registerHandler(testHandler)
 
     "invoke handler based on command type" in {
       subject.send(ExampleCommand("example"))
@@ -34,14 +34,14 @@ class CommandBusSpec extends org.specs.Specification {
   }
 
   "command bus" should {
-    subject.register(CommandHandler {
+    subject register {
       command: ExampleCommand =>
         modifyEventSource(Source, ExampleEvent(command.content))(_ => None) andThen behavior.accept()
-    })
-    subject.register(CommandHandler {
+    }
+    subject register {
       command: AnotherCommand =>
         modifyEventSource(Source, ExampleEvent(command.content))(_ => None) andThen behavior.reject("failed")
-    })
+    }
 
     "commit accepted unit of work" in {
       subject.send(ExampleCommand("hello"))
