@@ -13,12 +13,13 @@ import org.squeryl.adapters.H2Adapter
 import org.squeryl.PrimitiveTypeMode._
 import com.zilverline.es2.eventstore.SquerylEventStore
 import example.lib.DependencyFactory
+import com.zilverline.es2.util.Logging
 
 /**
  * A class that's instantiated early and run.  It allows the application
  * to modify lift's environment
  */
-class Boot {
+class Boot extends Logging {
   def boot {
     // where to search snippet
     LiftRules.addToPackages("example")
@@ -57,7 +58,7 @@ class Boot {
     SessionFactory.concreteFactory = Some {
       () =>
         val result = Session.create(java.sql.DriverManager.getConnection(jdbcUrl), new H2Adapter)
-        result.setLogger(println)
+        result.setLogger(logger.debug _)
         result
     }
 

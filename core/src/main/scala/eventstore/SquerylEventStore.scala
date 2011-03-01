@@ -55,7 +55,7 @@ class SquerylEventStore(serializer: Serializer) extends EventStore {
     records.map(record => Committed(record.source, record.sequence, read(record.event))).toSeq
   }
 
-  def replayAllEvents {
+  override def replayAllEvents {
     transaction {
       val records = from(EventStreamRecords)(r => select(r).orderBy(r.id asc))
       val events = records.toStream.map(record => Committed(record.source, record.sequence, read(record.event)))

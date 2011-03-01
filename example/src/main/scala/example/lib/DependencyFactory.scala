@@ -8,12 +8,12 @@ import util._
 import common._
 import _root_.java.util.Date
 import com.zilverline.es2.domain.Aggregates
-import com.zilverline.es2.eventstore.{ReflectionTypeHints, JsonSerializer, SquerylEventStore}
 import com.zilverline.es2.reports.Reports
 import example.domain._
 import commands.CreateDraftInvoice
 import reports.{NewsItemReport, InvoiceReport}
 import com.zilverline.es2.commands.{CommandHandler, CommandBus}
+import com.zilverline.es2.eventstore.{LoggingEventStore, ReflectionTypeHints, JsonSerializer, SquerylEventStore}
 
 /**
  * A factory for generating new instances of Date.  You can create
@@ -34,7 +34,7 @@ object DependencyFactory extends Factory {
     result
   })
   implicit object eventStore extends FactoryMaker({
-    val result = new SquerylEventStore(eventSerializer.vend)
+    val result = new SquerylEventStore(eventSerializer.vend) with LoggingEventStore
     result.addListener(commit => aggregates.vend.applyEvent(commit))
     result.addListener(commit => reports.vend.applyEvent(commit))
     result
