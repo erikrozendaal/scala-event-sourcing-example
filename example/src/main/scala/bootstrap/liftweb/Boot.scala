@@ -26,11 +26,12 @@ class Boot {
     // Build SiteMap
     val entries = List(
       Menu.i("News Items") / "index", // the simple way to declare a menu
+      example.snippet.Invoices.menu)
 
       // more complex because this menu allows anything in the
       // /static path to be visible
-      Menu(Loc("Static", Link(List("static"), true, "/static/index"),
-	       "Static Content")))
+//      Menu(Loc("Static", Link(List("static"), true, "/static/index"),
+//	       "Static Content")))
 
     // set the sitemap.  Note if you don't want access control for
     // each page, just comment this line out.
