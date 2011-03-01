@@ -1,22 +1,29 @@
 <html xmlns="http://www.w3.org/1999/xhtml" xmlns:lift="http://liftweb.net/">
-  <head>
-    <meta http-equiv="content-type" content="text/html; charset=UTF-8" />
-    <meta name="description" content="" />
-    <meta name="keywords" content="" />
+<head>
+
+    <meta http-equiv="content-type" content="text/html; charset=UTF-8"/>
+    <meta name="description" content=""/>
+    <meta name="keywords" content=""/>
+    <link type="text/css" rel="stylesheet" href="/css/example.css"/>
     <title><span class="lift:Menu.title">code:app:0.1-SNAPSHOT</span></title>
     <script id="jquery" src="/classpath/jquery.js" type="text/javascript"/>
-  </head>
-  <body>
+    <lift:CSS.blueprint/>
+</head>
+<body>
+<div id="menu">
     <div class="lift:Menu.builder"/>
-    <div class="lift:Msgs?showAll=true"/>
+</div>
 
-    <lift:bind name="content" />
+<div id="content">
+    <h1><span class="lift:Menu.title">code:app:0.1-SNAPSHOT</span></h1>
 
-    <hr />
-    <h4>
-      <a href="http://www.liftweb.net"><i>Lift</i></a> 
-      is Copyright 2007-2010 WorldWide Conferencing, LLC.
-      Distributed under an Apache 2.0 License.
-    </h4>
-  </body>
+    <div class="lift:Msgs?showAll=true">
+        <lift:error_class>messages errors</lift:error_class>
+        <lift:warning_class>messages warnings</lift:warning_class>
+        <lift:notice_class>messages notices</lift:notice_class>
+    </div>
+    <lift:bind name="content"/>
+</div>
+
+</body>
 </html>

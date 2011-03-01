@@ -3,8 +3,8 @@ import sbt._
 class Project(info: ProjectInfo) extends ParentProject(info) {
   val LiftVersion = "2.2"
 
-  lazy val core = project("core", "Core", new CoreProject(_))
-  lazy val example = project("example", "Example Web Project", new ExampleWebProject(_), core)
+  lazy val core = project("core", "core", new CoreProject(_))
+  lazy val example = project("example", "example", new ExampleWebProject(_), core)
 
   class CoreProject(info: ProjectInfo) extends DefaultProject(info) with growl.GrowlingTests {
     override def compileOptions = super.compileOptions ++ Seq(Unchecked)

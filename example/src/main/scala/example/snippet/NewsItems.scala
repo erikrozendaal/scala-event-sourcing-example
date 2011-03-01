@@ -13,7 +13,7 @@ class NewsItems {
   lazy val commands = DependencyFactory.commands.vend
   lazy val newsItemsReport = DependencyFactory.reports.vend.queryable[NewsItemReport]
 
-  def list = ".newsitem *" #> newsItemsReport.query(_.newsItems)
+  def list = ".newsitem *" #> newsItemsReport.query(_.newsItems).take(5)
 
   def add = {
     var content = ""

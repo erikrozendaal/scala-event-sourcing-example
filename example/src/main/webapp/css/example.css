@@ -1,0 +1,39 @@
+body {
+    font-family: Verdana;
+}
+
+#menu {
+    width: 150px;
+    float: left;
+}
+
+#content {
+    margin-left: 150px;
+    width: 750px;
+}
+
+.messages {
+    width: 100%;
+    border: 2px solid;
+    border-radius: 5px;
+}
+
+    .messages ul {
+        margin: 5px;
+        margin-left: 1.5em
+    }
+
+    .messages.notices {
+        border-color: green;
+        background-color: #a0ffa0;
+    }
+
+    .messages.warnings {
+        border-color: yellow;
+        background-color: #ffffa0;
+    }
+
+    .messages.errors {
+        border-color: red;
+        background-color: #ffa0a0;
+    }
