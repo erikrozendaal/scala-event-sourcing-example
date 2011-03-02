@@ -3,7 +3,7 @@ package examples
 
 import org.specs.Specification
 
-import behavior._
+import transaction._
 import commands._
 import domain._
 import eventstore.Commit
@@ -25,7 +25,7 @@ sealed trait Invoice extends AggregateRoot {
 }
 
 case class InitialInvoice(protected[this] val id: Identifier) extends Invoice {
-  def createDraft: Behavior[Nothing, DraftInvoice] = created(InvoiceDraftCreated())
+  def createDraft: Transaction[DraftInvoice] = created(InvoiceDraftCreated())
 
   protected[this] def applyEvent = created
 
@@ -39,11 +39,11 @@ case class DraftInvoice(
   items: Map[Int, InvoiceItem] = Map.empty
   ) extends Invoice {
 
-  def changeRecipient(recipient: Option[String]): Behavior[Nothing, DraftInvoice] = {
+  def changeRecipient(recipient: Option[String]): Transaction[DraftInvoice] = {
     recipientChanged(InvoiceRecipientChanged(recipient.map(_.trim).filter(_.nonEmpty)))
   }
 
-  def addItem(description: String, amount: BigDecimal): Behavior[Nothing, DraftInvoice] = {
+  def addItem(description: String, amount: BigDecimal): Transaction[DraftInvoice] = {
     val item = InvoiceItem(nextItemId, description, amount)
     itemAdded(InvoiceItemAdded(item, totalAmount + amount))
   }

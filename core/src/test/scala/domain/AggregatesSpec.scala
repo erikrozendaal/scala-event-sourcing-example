@@ -29,7 +29,7 @@ class AggregatesSpec extends org.specs.Specification {
 
   val TestId1 = newIdentifier
   val justCreated = InitialTestAR1(TestId1).update("hello").result
-  val updated = behavior.accept(justCreated).flatMap(_.update("world")).result
+  val updated = transaction.pure(justCreated).flatMap(_.update("world")).result
   val different = InitialTestAR1(TestId1).update("different?").result
 
   "new aggregate store" should {

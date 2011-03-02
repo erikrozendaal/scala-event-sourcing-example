@@ -1,9 +1,9 @@
 package com.zilverline.es2
 package commands
 
-class CommandBusSpec extends org.specs.Specification {
+import transaction._
 
-  import behavior._
+class CommandBusSpec extends org.specs.Specification {
 
   val Source = newIdentifier
 
@@ -19,7 +19,7 @@ class CommandBusSpec extends org.specs.Specification {
   "command bus with handlers" should {
     var handlerInvoked = false
 
-    def testHandler = CommandHandler {command: ExampleCommand => handlerInvoked = true; behavior.accept()}
+    def testHandler = CommandHandler {command: ExampleCommand => handlerInvoked = true; transaction.pure()}
     subject.registerHandler(testHandler)
 
     "invoke handler based on command type" in {
@@ -36,11 +36,11 @@ class CommandBusSpec extends org.specs.Specification {
   "command bus" should {
     subject register {
       command: ExampleCommand =>
-        modifyEventSource(Source, ExampleEvent(command.content))(_ => None) andThen behavior.accept()
+        modifyEventSource(Source, ExampleEvent(command.content))(_ => None) andThen transaction.pure()
     }
     subject register {
       command: AnotherCommand =>
-        modifyEventSource(Source, ExampleEvent(command.content))(_ => None) andThen behavior.reject("failed")
+        modifyEventSource(Source, ExampleEvent(command.content))(_ => None) andThen transaction.rollback
     }
 
     "commit accepted unit of work" in {
