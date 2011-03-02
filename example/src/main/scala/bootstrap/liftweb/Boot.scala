@@ -9,11 +9,11 @@ import http._
 import sitemap._
 import Loc._
 import org.squeryl.{Session, SessionFactory}
-import org.squeryl.adapters.H2Adapter
 import org.squeryl.PrimitiveTypeMode._
 import com.zilverline.es2.eventstore.SquerylEventStore
 import example.lib.DependencyFactory
 import com.zilverline.es2.util.Logging
+import org.squeryl.adapters.{MySQLAdapter, H2Adapter}
 
 /**
  * A class that's instantiated early and run.  It allows the application
@@ -50,15 +50,17 @@ class Boot extends Logging {
     LiftRules.early.append(_.setCharacterEncoding("UTF-8"))
 
     // Squeryl for the event store
-    val jdbcUrl = "jdbc:h2:test"
-    val jdbcDriver = "org.h2.Driver"
+//    val jdbcUrl = "jdbc:h2:test"
+//    val jdbcDriver = "org.h2.Driver"
+    val jdbcUrl = "jdbc:mysql://localhost:3306/es2"
+    val jdbcDriver = "com.mysql.jdbc.Driver"
 
     Class.forName(jdbcDriver)
 
     SessionFactory.concreteFactory = Some {
       () =>
-        val result = Session.create(java.sql.DriverManager.getConnection(jdbcUrl), new H2Adapter)
-        result.setLogger(logger.debug _)
+        val result = Session.create(java.sql.DriverManager.getConnection(jdbcUrl, "root", ""), new MySQLAdapter)
+        result.setLogger(logger.trace _)
         result
     }
 

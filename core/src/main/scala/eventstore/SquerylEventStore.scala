@@ -24,7 +24,7 @@ object SquerylEventStore extends Schema {
   on(EventStreamRecords) {t =>
     declare(
       t.source is (dbType("varchar(36)")),
-      t.event is (dbType("varchar")),
+      t.event is (dbType("text")),
       columns(t.source, t.sequence) are (unique))
   }
 }
@@ -40,7 +40,7 @@ class SquerylEventStore(serializer: Serializer) extends EventStore {
   def commit(attempt: Commit) {
     if (attempt.events.isEmpty) return
 
-    synchronized {
+    this synchronized { // TODO only lock the event source being committed
       val committed = makeCommittedEvents(attempt)
       insertEvents(attempt, committed)
       dispatchEvents(committed)
@@ -89,7 +89,7 @@ class SquerylEventStore(serializer: Serializer) extends EventStore {
   }
 
   private def insertEvents(attempt: Commit, events: Iterable[CommittedEvent]) {
-    transaction {
+    inTransaction {
       if (attempt.revision == 0) {
         createEventStream(attempt)
       } else {

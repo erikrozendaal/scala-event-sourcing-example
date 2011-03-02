@@ -19,6 +19,7 @@ class Project(info: ProjectInfo) extends ParentProject(info) {
     val specs = "org.scala-tools.testing" % "specs_2.8.1" % "1.6.7" % "test" withSources()
     val scalacheck = "org.scala-tools.testing" % "scalacheck_2.8.1" % "1.8" % "test" withSources()
     val h2 = "com.h2database" % "h2" % "1.3.151" % "test" withSources()
+    val mysql = "mysql" % "mysql-connector-java" % "5.1.15" % "test"
     val slf4j_simple = "org.slf4j" % "slf4j-simple" % Slf4jVersion % "test" withSources()
   }
 
