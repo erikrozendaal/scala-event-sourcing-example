@@ -35,9 +35,10 @@ trait AggregateRoot {
     def apply[B](callback: Recorded[A] => B) = new AggregateEventHandler(id, callback)
   }
 
-  private[domain] def internalId = id
-
+  /* APIs for internal use */
   private[domain] type InternalEvent = Event
+
+  private[domain] def internalId = id
 
   private[domain] def internalApplyEvent = applyEvent
 }

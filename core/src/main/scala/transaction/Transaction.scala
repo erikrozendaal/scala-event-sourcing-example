@@ -1,11 +1,12 @@
 package com.zilverline.es2
 package transaction
 
-case class EventSourceState[+A](id: Identifier, original: Revision, current: Revision, value: A, changes: IndexedSeq[DomainEvent]) {
+case class EventSourceState[+A](id: Identifier, original: Revision, value: A, changes: IndexedSeq[DomainEvent]) {
+  def current = original + changes.size
+
   def modify[B, E <: DomainEvent](event: E)(callback: Uncommitted[E] => B): EventSourceState[B] = {
-    val nextRevision = current + 1
-    val updatedValue = callback(Uncommitted(id, nextRevision, event))
-    copy(current = nextRevision, value = updatedValue, changes = changes :+ event)
+    val updatedValue = callback(Uncommitted(id, current + 1, event))
+    copy(value = updatedValue, changes = changes :+ event)
   }
 }
 
@@ -15,11 +16,11 @@ case class UnitOfWork(eventSources: Map[Identifier, EventSourceState[Any]] = Map
 
   def trackEventSource(source: Identifier, revision: Revision, value: Any) = {
     require(!eventSources.contains(source), "already tracking " + source)
-    copy(eventSources = eventSources + (source -> EventSourceState(source, revision, revision, value, IndexedSeq.empty)))
+    copy(eventSources = eventSources + (source -> EventSourceState(source, revision, value, IndexedSeq.empty)))
   }
 
   def modifyEventSource[A <: DomainEvent, B](source: Identifier, event: A)(callback: Uncommitted[A] => B) = {
-    val originalState = eventSources.getOrElse(source, EventSourceState(source, 0, 0, None, IndexedSeq.empty))
+    val originalState = eventSources.getOrElse(source, EventSourceState(source, 0, None, IndexedSeq.empty))
     val updatedState = originalState.modify(event)(callback)
     (copy(eventSources.updated(source, updatedState)), updatedState.value)
   }

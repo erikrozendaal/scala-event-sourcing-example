@@ -13,7 +13,7 @@ class TransactionSpec extends org.specs.Specification {
   "track event source" in {
     val result = trackEventSource(Source, 3, "three").apply(emptyUnitOfWork)
 
-    result.uow.eventSources(Source) must beEqualTo(EventSourceState(Source, 3, 3, "three", IndexedSeq.empty))
+    result.uow.eventSources(Source) must beEqualTo(EventSourceState(Source, 3, "three", IndexedSeq.empty))
   }
 
   "track current event source revision" in {
@@ -21,7 +21,7 @@ class TransactionSpec extends org.specs.Specification {
       .andThen(modifyEventSource(Source, ExampleEvent("example")){ _ => "example" })
       .apply(emptyUnitOfWork)
 
-    result.uow.eventSources(Source) must beEqualTo(EventSourceState(Source, 1, 2, "example", IndexedSeq(ExampleEvent("example"))))
+    result.uow.eventSources(Source) must beEqualTo(EventSourceState(Source, 1, "example", IndexedSeq(ExampleEvent("example"))))
   }
 
 }
