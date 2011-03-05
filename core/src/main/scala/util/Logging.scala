@@ -6,7 +6,7 @@ import org.slf4j.{LoggerFactory, Logger}
 trait Logging {
   protected[this] val logger: Logger = LoggerFactory.getLogger(getClass)
 
-  protected[this] def profile(message: => String)(block: => Unit) {
+  protected[this] def profile[S](message: => String)(block: => S): S = {
     val start = System.currentTimeMillis
     try {
       block

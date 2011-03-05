@@ -7,7 +7,7 @@ import scala.collection.mutable.{Map => MMap}
 
 trait Report[-A <: DomainEvent] extends EventProcessor[A, Report[A]]
 
-trait QueryableReport[A <: Report[_]] {
+trait QueryableReport[+A <: Report[_]] {
   def query[B](f: A => B): B
 }
 

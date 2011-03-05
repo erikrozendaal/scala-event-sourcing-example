@@ -14,6 +14,8 @@ import com.zilverline.es2.eventstore.SquerylEventStore
 import example.lib.DependencyFactory
 import com.zilverline.es2.util.Logging
 import org.squeryl.adapters.{MySQLAdapter, H2Adapter}
+import example.snippet.Invoices
+import example.reports.InvoiceReport
 
 /**
  * A class that's instantiated early and run.  It allows the application
@@ -74,4 +76,8 @@ class Boot extends Logging {
 
     DependencyFactory.eventStore.vend.replayAllEvents
   }
+
+  LiftRules.snippetDispatch.prepend({
+    case "Invoices" => new Invoices(DependencyFactory.commands.vend, DependencyFactory.reports.vend.queryable[InvoiceReport])
+  })
 }

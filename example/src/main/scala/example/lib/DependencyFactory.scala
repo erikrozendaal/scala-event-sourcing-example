@@ -7,13 +7,13 @@ import json.Serialization
 import util._
 import common._
 import _root_.java.util.Date
-import com.zilverline.es2.domain.Aggregates
 import com.zilverline.es2.reports.Reports
 import example.domain._
-import commands.CreateDraftInvoice
+import commands._
 import reports.{NewsItemReport, InvoiceReport}
 import com.zilverline.es2.commands.{CommandHandler, CommandBus}
 import com.zilverline.es2.eventstore.{LoggingEventStore, ReflectionTypeHints, JsonSerializer, SquerylEventStore}
+import com.zilverline.es2.domain.{AggregateRepository, Aggregates}
 
 /**
  * A factory for generating new instances of Date.  You can create
@@ -27,6 +27,7 @@ object DependencyFactory extends Factory {
 
   implicit object eventSerializer extends FactoryMaker(new JsonSerializer()(Serialization.formats(new ReflectionTypeHints)))
   implicit object aggregates extends FactoryMaker(new Aggregates(InitialInvoice))
+  implicit object repository extends FactoryMaker(new AggregateRepository[Invoice](aggregates.vend))
   implicit object reports extends FactoryMaker({
     val result = new Reports
     result.register(InvoiceReport())
@@ -43,6 +44,11 @@ object DependencyFactory extends Factory {
     val result = new CommandBus(eventStore.vend)
     result register {
       command: CreateDraftInvoice => InitialInvoice(command.invoiceId).createDraft
+    }
+    result register {
+      command: ChangeInvoiceRecipient => repository.vend.update(command.invoiceId) {
+        invoice: DraftInvoice => invoice.changeRecipient(command.recipient)
+      }
     }
     result.registerHandler(CommandHandler.updateCommandHandler)
     result

@@ -2,6 +2,7 @@ package com.zilverline.es2
 package domain
 
 import transaction._
+import util._
 
 class AggregateEventHandler[-A <: DomainEvent, +B](source: Identifier, callback: Recorded[A] => B) {
   def apply(event: A) = modifyEventSource(source, event)(callback)
@@ -29,7 +30,7 @@ trait AggregateRoot {
 
   protected[this] def when[A <: Event] = new When[A]
 
-  implicit protected[this] def recordedToPayload[A <: Event](recorded: Recorded[A]): A = recorded.payload
+  implicit protected[this] def payloadOfRecordedEvent[A <: Event](recorded: Recorded[A]): A = recorded.payload
 
   protected[this] class When[A <: DomainEvent] {
     def apply[B](callback: Recorded[A] => B) = new AggregateEventHandler(id, callback)
@@ -43,7 +44,7 @@ trait AggregateRoot {
   private[domain] def internalApplyEvent = applyEvent
 }
 
-class AggregateRepository[-AR <: AggregateRoot](aggregates: Aggregates) {
+class AggregateRepository[-AR <: AggregateRoot : NotNothing](aggregates: Aggregates) {
   def get[T <: AR](id: Identifier): Transaction[T] = Transaction {
     uow =>
       uow.getEventSource(id) map {

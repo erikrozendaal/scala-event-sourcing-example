@@ -2,7 +2,7 @@ package example.domain
 
 import com.zilverline.es2._
 import com.zilverline.es2.domain._
-import example.events.{InvoiceCreated, InvoiceEvent}
+import example.events._
 
 trait Invoice extends AggregateRoot {
   protected[this] type Event = InvoiceEvent
@@ -14,8 +14,27 @@ case class InitialInvoice(id: Identifier) extends Invoice {
   private def created = when[InvoiceCreated] {event => new DraftInvoice(event.source)}
 }
 
-case class DraftInvoice(id: Identifier) extends Invoice {
-  protected[this] def applyEvent = {
-    case event => error("unexpected event: " + event)
+case class DraftInvoice(
+  id: Identifier,
+  recipient: Option[String] = None,
+  nextItemId: Int = 1,
+  items: Map[Int, InvoiceItem] = Map.empty)
+  extends Invoice {
+
+  def changeRecipient(recipient: String) = recipientChanged(InvoiceRecipientChanged(recipient, items.nonEmpty))
+
+  def addItem(description: String, amount: BigDecimal) = {
+    itemAdded(InvoiceItemAdded(InvoiceItem(nextItemId, description, amount), totalAmount + amount, recipient.isDefined))
+  }
+
+  private def totalAmount = items.values.map(_.amount).sum
+
+  protected[this] def applyEvent = recipientChanged orElse itemAdded
+
+  private def recipientChanged = when[InvoiceRecipientChanged] {event =>
+    copy(recipient = Some(event.recipient))
+  }
+  private def itemAdded = when[InvoiceItemAdded] {event =>
+    copy(nextItemId = event.item.id + 1, items = items + (event.item.id -> event.item))
   }
 }
