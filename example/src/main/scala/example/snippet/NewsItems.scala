@@ -1,21 +1,25 @@
 package example.snippet
 
-import example.lib.DependencyFactory
 import com.zilverline.es2._
 import com.zilverline.es2.commands._
 import net.liftweb.util._
 import Helpers._
 import example.reports.NewsItemReport
 import example.events.NewsItemAdded
-import net.liftweb.http.{S, SHtml}
+import net.liftweb.http._
+import reports.QueryableReport
 
-class NewsItems {
-  lazy val commands = DependencyFactory.commands.vend
-  lazy val newsItemsReport = DependencyFactory.reports.vend.queryable[NewsItemReport]
+class NewsItems(commands: CommandBus, newsItemReport: QueryableReport[NewsItemReport])
+  extends DispatchSnippet {
 
-  def list = ".newsitem *" #> newsItemsReport.query(_.newsItems).take(5)
+  def dispatch: DispatchIt = {
+    case "list" => list
+    case "add" => add
+  }
 
-  def add = {
+  private def list = ".newsitem *" #> newsItemReport.query(_.newsItems).take(5)
+
+  private def add = {
     var content = ""
 
     def doSubmit() {

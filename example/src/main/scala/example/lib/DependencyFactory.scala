@@ -12,8 +12,8 @@ import example.domain._
 import commands._
 import reports.{NewsItemReport, InvoiceReport}
 import com.zilverline.es2.commands.{CommandHandler, CommandBus}
-import com.zilverline.es2.eventstore.{LoggingEventStore, ReflectionTypeHints, JsonSerializer, SquerylEventStore}
 import com.zilverline.es2.domain.{AggregateRepository, Aggregates}
+import com.zilverline.es2.eventstore._
 
 /**
  * A factory for generating new instances of Date.  You can create
@@ -25,34 +25,34 @@ import com.zilverline.es2.domain.{AggregateRepository, Aggregates}
 object DependencyFactory extends Factory {
   implicit object time extends FactoryMaker(Helpers.now _)
 
-  implicit object eventSerializer extends FactoryMaker(new JsonSerializer()(Serialization.formats(new ReflectionTypeHints)))
-  implicit object aggregates extends FactoryMaker(new Aggregates(InitialInvoice))
-  implicit object repository extends FactoryMaker(new AggregateRepository[Invoice](aggregates.vend))
-  implicit object reports extends FactoryMaker({
+  lazy val eventSerializer = new JsonSerializer()(Serialization.formats(new ReflectionTypeHints))
+  lazy val aggregates = new Aggregates(InitialInvoice)
+  lazy val repository = new AggregateRepository[Invoice](aggregates)
+  lazy val reports = {
     val result = new Reports
     result.register(InvoiceReport())
     result.register(NewsItemReport())
     result
-  })
-  implicit object eventStore extends FactoryMaker({
-    val result = new SquerylEventStore(eventSerializer.vend) with LoggingEventStore
-    result.addListener(commit => aggregates.vend.applyEvent(commit))
-    result.addListener(commit => reports.vend.applyEvent(commit))
+  }
+  lazy val eventStore: EventStore = {
+    val result = new SquerylEventStore(eventSerializer) with LoggingEventStore
+    result.addListener(commit => aggregates.applyEvent(commit))
+    result.addListener(commit => reports.applyEvent(commit))
     result
-  })
-  implicit object commands extends FactoryMaker({
-    val result = new CommandBus(eventStore.vend)
+  }
+  lazy val commands = {
+    val result = new CommandBus(eventStore)
     result register {
       command: CreateDraftInvoice => InitialInvoice(command.invoiceId).createDraft
     }
     result register {
-      command: ChangeInvoiceRecipient => repository.vend.update(command.invoiceId) {
+      command: ChangeInvoiceRecipient => repository.update(command.invoiceId) {
         invoice: DraftInvoice => invoice.changeRecipient(command.recipient)
       }
     }
     result.registerHandler(CommandHandler.updateCommandHandler)
     result
-  })
+  }
 
   /**
    * objects in Scala are lazily created.  The init()

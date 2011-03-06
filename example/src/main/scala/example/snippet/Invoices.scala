@@ -1,6 +1,5 @@
 package example.snippet
 
-import example.lib.DependencyFactory
 import example.commands._
 import com.zilverline.es2._
 import commands.CommandBus
