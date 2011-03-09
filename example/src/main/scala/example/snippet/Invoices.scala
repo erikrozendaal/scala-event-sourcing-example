@@ -26,10 +26,10 @@ class Invoices(commands: CommandBus, invoiceReport: QueryableReport[InvoiceRepor
     case "editRecipient" => editRecipient
   }
 
-  def list = ".invoice" #> invoiceReport.query(_.mostRecent(10)).map(invoice =>
-    <li>{invoice.toString} <a href={"/invoices/edit?invoice=" + invoice.invoiceId}>edit</a></li>)
+  private def list = ".invoice" #> invoiceReport.query(_.mostRecent(S.param("n").map(_.toInt).openOr(10))).map(invoice =>
+    <tr><td>{invoice.invoiceId}</td><td>{invoice.recipient.getOrElse("")}</td><td><a href={"/invoices/edit?invoice=" + invoice.invoiceId}>edit</a></td></tr>)
 
-  def createDraft = {
+  private def createDraft = {
     def doSubmit() {
       val invoiceId = newIdentifier
       commands.send(CreateDraftInvoice(invoiceId))
@@ -40,7 +40,7 @@ class Invoices(commands: CommandBus, invoiceReport: QueryableReport[InvoiceRepor
     "type=submit" #> SHtml.submit("Create draft invoice", doSubmit)
   }
 
-  def editRecipient = {
+  private def editRecipient = {
     val uri = S.uriAndQueryString openOr "/"
     val invoiceId = UUID.fromString(S.param("invoice").open_!)
     var recipient = ""

@@ -14,6 +14,7 @@ import com.zilverline.es2.eventstore.SquerylEventStore
 import example.lib.DependencyFactory
 import com.zilverline.es2.util.Logging
 import org.squeryl.adapters.{MySQLAdapter, H2Adapter}
+import example.app._
 import example.reports._
 import example.snippet._
 
@@ -74,11 +75,13 @@ class Boot extends Logging {
       case exception => println("Event store schema creation failed, maybe the tables already exist? " + exception.getMessage)
     }
 
-    DependencyFactory.eventStore.replayAllEvents
+    Application.eventStore.replayAllEvents
   }
 
-  LiftRules.snippetDispatch.prepend({
-    case "Invoices" => new Invoices(DependencyFactory.commands, DependencyFactory.reports.queryable[InvoiceReport])
-    case "NewsItems" => new NewsItems(DependencyFactory.commands, DependencyFactory.reports.queryable[NewsItemReport])
-  })
+  import Application._
+
+  LiftRules.snippetDispatch.prepend(Map(
+    "Invoices" -> new Invoices(commands, invoiceReport),
+    "NewsItems" -> new NewsItems(commands, newsItemReport)
+  ))
 }

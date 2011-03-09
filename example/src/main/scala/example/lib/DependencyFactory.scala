@@ -25,35 +25,6 @@ import com.zilverline.es2.eventstore._
 object DependencyFactory extends Factory {
   implicit object time extends FactoryMaker(Helpers.now _)
 
-  lazy val eventSerializer = new JsonSerializer()(Serialization.formats(new ReflectionTypeHints))
-  lazy val aggregates = new Aggregates(InitialInvoice)
-  lazy val repository = new AggregateRepository[Invoice](aggregates)
-  lazy val reports = {
-    val result = new Reports
-    result.register(InvoiceReport())
-    result.register(NewsItemReport())
-    result
-  }
-  lazy val eventStore: EventStore = {
-    val result = new SquerylEventStore(eventSerializer) with LoggingEventStore
-    result.addListener(commit => aggregates.applyEvent(commit))
-    result.addListener(commit => reports.applyEvent(commit))
-    result
-  }
-  lazy val commands = {
-    val result = new CommandBus(eventStore)
-    result register {
-      command: CreateDraftInvoice => InitialInvoice(command.invoiceId).createDraft
-    }
-    result register {
-      command: ChangeInvoiceRecipient => repository.update(command.invoiceId) {
-        invoice: DraftInvoice => invoice.changeRecipient(command.recipient)
-      }
-    }
-    result.registerHandler(CommandHandler.updateCommandHandler)
-    result
-  }
-
   /**
    * objects in Scala are lazily created.  The init()
    * method creates a List of all the objects.  This
@@ -61,7 +32,7 @@ object DependencyFactory extends Factory {
    * registering their types with the dependency injector
    */
   private def init() {
-    List(time, eventStore)
+    List(time)
   }
   init()
 }

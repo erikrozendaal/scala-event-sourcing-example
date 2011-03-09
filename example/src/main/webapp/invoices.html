@@ -9,9 +9,14 @@
 <div id="main" class="lift:surround?with=default;at=content">
 
     <div class="lift:Invoices.list">
-        <ol>
-            <li class="invoice">an invoice</li>
-        </ol>
+        <table>
+            <thead>
+                <th>Id</th><th>Recipient</th><th>Actions</th>
+            </thead>
+            <tbody>
+                <tr class="invoice">an invoice</tr>
+            </tbody>
+        </table>
     </div>
 
     <div class="lift:Invoices.createDraft?form=post">
