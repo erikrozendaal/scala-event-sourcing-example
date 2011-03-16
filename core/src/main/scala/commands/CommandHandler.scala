@@ -18,7 +18,7 @@ object CommandHandler {
 
   def updateCommandHandler = CommandHandler[Update] {
     command =>
-      trackEventSource(command.eventSourceId, command.revision, ())
+      trackEventSource(command.eventSourceId, command.expectedRevision, ())
         .andThen(modifyEventSource(command.eventSourceId, command.event)(_ => ()))
   }
 }

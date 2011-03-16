@@ -8,7 +8,9 @@ import util.TypeMap
 
 class CommandBus(eventStore: EventStore) {
   def send(command: Command) {
-    val handler = handlers.getMostSpecific(command.getClass).getOrElse(throw new IllegalArgumentException("no handler for found command: " + command))
+    val handler = handlers.getMostSpecific(command.getClass)
+      .getOrElse(throw new IllegalArgumentException("no handler for found command: " + command))
+
     handler.invokeWithCommand(command)(UnitOfWork()) match {
       case TransactionState(uow, result) =>
         for (source <- uow.eventSources.values) {

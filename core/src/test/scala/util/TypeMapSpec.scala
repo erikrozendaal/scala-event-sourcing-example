@@ -2,7 +2,7 @@ package com.zilverline.es2
 package util
 
 class TypeMapSpec extends org.specs2.mutable.SpecificationWithJUnit {
-  val zero = TypeMap.empty
+  val empty = TypeMap.empty
 
   trait Root
   trait Child1 extends Root
@@ -11,13 +11,13 @@ class TypeMapSpec extends org.specs2.mutable.SpecificationWithJUnit {
   class Multiparent extends Child1 with Child2
 
   "allow adding new values indexed by class" in {
-    val one = zero + (classOf[ExampleEvent], ExampleEvent("example"))
+    val one = empty + (classOf[ExampleEvent], ExampleEvent("example"))
 
     one.get(classOf[ExampleEvent]) must beEqualTo(Some(ExampleEvent("example")))
   }
 
   "find value by most specific class" in {
-    val s = zero + (classOf[Child1], "child1 value")
+    val s = empty + (classOf[Child1], "child1 value")
 
     s.getMostSpecific(classOf[Child1]) must beEqualTo(Some("child1 value"))
     s.getMostSpecific(classOf[Child2]) must beEqualTo(None)
