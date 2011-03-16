@@ -72,13 +72,13 @@ trait AggregateFactory[AR <: AggregateRoot] extends EventSource[AggregateRoot] {
 
 class AggregateRepository[-AR <: AggregateRoot : NotNothing](aggregates: Aggregates) {
   def get[T <: AR](id: Identifier): Behavior[T] = Behavior {
-    uow =>
-      uow.getEventSource(id) map {
-        result => Reaction(uow, result.asInstanceOf[T])
+    tracked =>
+      tracked.getEventSource(id) map {
+        result => Reaction(tracked, result.asInstanceOf[T])
       } getOrElse {
         aggregates.get(id) map {
           aggregate =>
-            Reaction(uow.trackEventSource(id, aggregate.revision, aggregate.root), aggregate.root.asInstanceOf[T])
+            Reaction(tracked.trackEventSource(id, aggregate.revision, aggregate.root), aggregate.root.asInstanceOf[T])
         } getOrElse {
           throw new IllegalArgumentException("aggregate <" + id + "> not found")
         }
