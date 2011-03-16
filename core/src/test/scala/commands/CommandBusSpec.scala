@@ -19,7 +19,7 @@ class CommandBusSpec extends org.specs.Specification {
   "command bus with handlers" should {
     var handlerInvoked = false
 
-    def testHandler = CommandHandler {command: ExampleCommand => handlerInvoked = true; transaction.pure()}
+    def testHandler = CommandHandler[ExampleCommand] {command => handlerInvoked = true; transaction.pure()}
     subject.registerHandler(testHandler)
 
     "invoke handler based on command type" in {

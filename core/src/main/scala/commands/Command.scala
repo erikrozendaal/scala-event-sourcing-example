@@ -5,4 +5,4 @@ trait Command {
   val commandId = newIdentifier
 }
 
-case class Update(source: Identifier, revision: Revision, event: DomainEvent) extends Command
+case class Update(eventSourceId: Identifier, revision: Revision, event: DomainEvent) extends Command

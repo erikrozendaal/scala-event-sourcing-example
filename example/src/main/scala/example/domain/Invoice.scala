@@ -11,7 +11,7 @@ trait Invoice extends AggregateRoot {
 case class InitialInvoice(id: Identifier) extends Invoice {
   def createDraft = created(InvoiceCreated())
   protected[this] def applyEvent = created
-  private def created = when[InvoiceCreated] {event => new DraftInvoice(event.source)}
+  private def created = when[InvoiceCreated] {event => new DraftInvoice(id)}
 }
 
 case class DraftInvoice(

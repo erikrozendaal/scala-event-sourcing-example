@@ -31,7 +31,7 @@ class Reports extends EventProcessor[DomainEvent, Unit] {
   def get[T <: Report[_]](implicit m: Manifest[T], nn: NotNothing[T]): T = reportByType(m.erasure).get.asInstanceOf[T]
 
   def applyEvent = event => {
-    reportsByEventType.getMostSpecific(event.payload.getClass) foreach {
+    reportsByEventType.getMostSpecific(event.event.getClass) foreach {
       updater => updater(event)
     }
   }

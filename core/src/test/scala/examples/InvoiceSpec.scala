@@ -29,7 +29,7 @@ case class InitialInvoice(protected[this] val id: Identifier) extends Invoice {
 
   protected[this] def applyEvent = created
 
-  private def created = when[InvoiceDraftCreated] {event => DraftInvoice(event.source)}
+  private def created = when[InvoiceDraftCreated] {event => DraftInvoice(id)}
 }
 
 case class DraftInvoice(
@@ -67,7 +67,7 @@ case class InvoiceDocument(
   items: Map[Int, InvoiceItem] = Map.empty,
   totalAmount: BigDecimal = 0
   ) extends EventProcessor[InvoiceEvent, InvoiceDocument] {
-  def applyEvent = _.payload match {
+  def applyEvent = _.event match {
     case InvoiceDraftCreated() => this
     case InvoiceRecipientChanged(recipient) =>
       copy(recipient = recipient)

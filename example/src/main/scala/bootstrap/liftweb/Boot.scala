@@ -7,16 +7,11 @@ import Helpers._
 import common._
 import http._
 import sitemap._
-import Loc._
-import org.squeryl.{Session, SessionFactory}
 import org.squeryl.PrimitiveTypeMode._
-import com.zilverline.es2.eventstore.SquerylEventStore
-import example.lib.DependencyFactory
 import com.zilverline.es2.util.Logging
-import org.squeryl.adapters.{MySQLAdapter, H2Adapter}
 import example.app._
-import example.reports._
 import example.snippet._
+import example.model.Product
 
 /**
  * A class that's instantiated early and run.  It allows the application
@@ -30,7 +25,8 @@ class Boot extends Logging {
     // Build SiteMap
     val entries = List(
       Menu.i("News Items") / "index", // the simple way to declare a menu
-      example.snippet.Invoices.menu)
+      example.snippet.Invoices.menu,
+      example.snippet.Products.menu)
 
       // more complex because this menu allows anything in the
       // /static path to be visible
@@ -52,29 +48,10 @@ class Boot extends Logging {
     // Force the request to be UTF-8
     LiftRules.early.append(_.setCharacterEncoding("UTF-8"))
 
-    // Squeryl for the event store
-//    val jdbcUrl = "jdbc:h2:test"
-//    val jdbcDriver = "org.h2.Driver"
-    val jdbcUrl = "jdbc:mysql://localhost:3306/es2"
-    val jdbcDriver = "com.mysql.jdbc.Driver"
-
-    Class.forName(jdbcDriver)
-
-    SessionFactory.concreteFactory = Some {
-      () =>
-        val result = Session.create(java.sql.DriverManager.getConnection(jdbcUrl, "root", ""), new MySQLAdapter)
-        result.setLogger(logger.trace _)
-        result
+    transaction {
+      Product.deleteAll
+      Product.insertTestData(36) // 0 -> 2000, 1 -> 2300, 13 -> 3300, 36 -> 9622, 71 -> 17000, 146 -> 33000
     }
-
-    try {
-      transaction {
-        SquerylEventStore.create
-      }
-    } catch {
-      case exception => println("Event store schema creation failed, maybe the tables already exist? " + exception.getMessage)
-    }
-
     Application.eventStore.replayAllEvents
   }
 
@@ -82,6 +59,7 @@ class Boot extends Logging {
 
   LiftRules.snippetDispatch.prepend(Map(
     "Invoices" -> new Invoices(commands, invoiceReport),
-    "NewsItems" -> new NewsItems(commands, newsItemReport)
+    "NewsItems" -> new NewsItems(commands, newsItemReport),
+    "Products" -> new Products
   ))
 }

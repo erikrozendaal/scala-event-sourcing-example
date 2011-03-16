@@ -9,8 +9,8 @@ import commands._
 case class InstructionAdded(text: String)
 
 case class InstructionReport(instructions: List[String] = List.empty) extends Report[InstructionAdded] {
-  def applyEvent = {
-    case Payload(InstructionAdded(text)) => copy(text :: instructions)
+  def applyEvent = _.event match {
+    case InstructionAdded(text) => copy(text :: instructions)
   }
 }
 

@@ -24,7 +24,7 @@ class CommandBus(eventStore: EventStore) {
   }
 
   def register[T <: Command](handler: T => Transaction[Any])(implicit m: Manifest[T]) {
-    registerHandler(CommandHandler(handler))
+    registerHandler(CommandHandler[T](handler))
   }
 
   @volatile

@@ -8,7 +8,7 @@ class ReportSpec extends org.specs.Specification {
   val subject = new Reports
 
   case class ExampleIndex(count: Int) extends Report[DomainEvent] {
-    def applyEvent = { case _ => copy(count + 1) }
+    def applyEvent = _ => copy(count + 1)
   }
 
   subject.register(ExampleIndex(0))

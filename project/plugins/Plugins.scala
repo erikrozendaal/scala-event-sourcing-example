@@ -5,5 +5,7 @@ class Plugins(info: ProjectInfo) extends PluginDefinition(info) {
   val growl = "me.lessis" % "sbt-growl-plugin" % "0.0.5"
 
   val sbtIdeaRepo = "sbt-idea-repo" at "http://mpeltonen.github.com/maven/"
-  val sbtIdea = "com.github.mpeltonen" % "sbt-idea-plugin" % "0.3.0"
+  val sbtIdea = "com.github.mpeltonen" % "sbt-idea-plugin" % "0.4.0"
+
+  lazy val scalate_plugin = "org.fusesource.scalate" % "sbt-scalate-plugin" % "1.4.1"
 }

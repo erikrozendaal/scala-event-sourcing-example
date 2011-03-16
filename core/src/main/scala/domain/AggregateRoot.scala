@@ -17,7 +17,7 @@ object AggregateEventHandler {
         if (isDefinedAt(recorded)) handler.applyFromHistory(recorded.asInstanceOf[Committed[A]])
         else error("unhandled event " + recorded + " for " + this)
 
-      def isDefinedAt(recorded: RecordedEvent) = m.erasure.isInstance(recorded.payload)
+      def isDefinedAt(recorded: RecordedEvent) = m.erasure.isInstance(recorded.event)
     }
 }
 
@@ -30,7 +30,7 @@ trait AggregateRoot {
 
   protected[this] def when[A <: Event] = new When[A]
 
-  implicit protected[this] def payloadOfRecordedEvent[A <: Event](recorded: Recorded[A]): A = recorded.payload
+  implicit protected[this] def payloadOfRecordedEvent[A <: Event](recorded: Recorded[A]): A = recorded.event
 
   protected[this] class When[A <: DomainEvent] {
     def apply[B](callback: Recorded[A] => B) = new AggregateEventHandler(id, callback)

@@ -17,8 +17,8 @@ case class InvoiceReport(
   def mostRecent(n: Int): List[InvoiceDocument] = recent.take(n).map(invoices)
 
   def applyEvent = committed => {
-    val invoiceId = committed.source
-    committed.payload match {
+    val invoiceId = committed.eventSourceId
+    committed.event match {
       case InvoiceCreated() =>
         copy(invoices + (invoiceId -> InvoiceDocument(invoiceId)), invoiceId :: recent)
 

@@ -1,15 +1,13 @@
 package example.snippet
 
 import example.commands._
-import com.zilverline.es2._
-import commands.CommandBus
+import com.zilverline.es2._, commands.CommandBus, reports.QueryableReport
 import net.liftweb.util._
 import Helpers._
 import example.reports.InvoiceReport
 import java.util.UUID
 import net.liftweb.sitemap._
 import net.liftweb.http._
-import reports.QueryableReport
 
 object Invoices {
   import Loc._

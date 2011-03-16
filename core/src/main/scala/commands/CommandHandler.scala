@@ -10,13 +10,15 @@ abstract class CommandHandler[T <: Command, R](implicit m: Manifest[T]) {
 }
 
 object CommandHandler {
-  def apply[T <: Command, R](callback: T => Transaction[R])(implicit m: Manifest[T]) = new CommandHandler[T, R] {
-    def apply(command: T) = callback(command)
+  def apply[T <: Command] = new {
+    def apply[R](callback: T => Transaction[R])(implicit m: Manifest[T]) = new CommandHandler[T, R] {
+      def apply(command: T) = callback(command)
+    }
   }
 
-  def updateCommandHandler = CommandHandler {
-    command: Update =>
-      trackEventSource(command.source, command.revision, ())
-        .andThen(modifyEventSource(command.source, command.event)(_ => ()))
+  def updateCommandHandler = CommandHandler[Update] {
+    command =>
+      trackEventSource(command.eventSourceId, command.revision, ())
+        .andThen(modifyEventSource(command.eventSourceId, command.event)(_ => ()))
   }
 }
