@@ -1,7 +1,7 @@
 package com.zilverline.es2
 package domain
 
-import transaction._, util._
+import behavior._, util._
 
 trait AggregateEventHandler[-A <: DomainEvent, +B] {
   private[domain] def applyFromHistory(event: Recorded[A]): B
@@ -71,19 +71,19 @@ trait AggregateFactory[AR <: AggregateRoot] extends EventSource[AggregateRoot] {
 }
 
 class AggregateRepository[-AR <: AggregateRoot : NotNothing](aggregates: Aggregates) {
-  def get[T <: AR](id: Identifier): Transaction[T] = Transaction {
+  def get[T <: AR](id: Identifier): Behavior[T] = Behavior {
     uow =>
       uow.getEventSource(id) map {
-        result => TransactionState(uow, result.asInstanceOf[T])
+        result => Reaction(uow, result.asInstanceOf[T])
       } getOrElse {
         aggregates.get(id) map {
           aggregate =>
-            TransactionState(uow.trackEventSource(id, aggregate.revision, aggregate.root), aggregate.root.asInstanceOf[T])
+            Reaction(uow.trackEventSource(id, aggregate.revision, aggregate.root), aggregate.root.asInstanceOf[T])
         } getOrElse {
           throw new IllegalArgumentException("aggregate <" + id + "> not found")
         }
       }
   }
 
-  def update[A <: AR, B <: AR](id: Identifier)(f: A => Transaction[B]): Transaction[B] = get(id) >>= f
+  def update[A <: AR, B <: AR](id: Identifier)(f: A => Behavior[B]): Behavior[B] = get(id) >>= f
 }

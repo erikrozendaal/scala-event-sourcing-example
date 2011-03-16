@@ -1,7 +1,7 @@
 package com.zilverline.es2
 package commands
 
-import transaction._
+import behavior._
 import org.specs2.execute.Success
 
 class CommandBusSpec extends org.specs2.mutable.SpecificationWithJUnit {
@@ -14,7 +14,7 @@ class CommandBusSpec extends org.specs2.mutable.SpecificationWithJUnit {
 
     var handlerInvoked = false
 
-    def testHandler = CommandHandler[ExampleCommand] {command => handlerInvoked = true; transaction.pure()}
+    def testHandler = CommandHandler[ExampleCommand] {command => handlerInvoked = true; behavior.pure()}
 
     subject.registerHandler(testHandler)
   }
@@ -34,7 +34,7 @@ class CommandBusSpec extends org.specs2.mutable.SpecificationWithJUnit {
 
     "commit accepted unit of work" in new Context {
       subject.register[ExampleCommand] {command =>
-        modifyEventSource(Source, ExampleEvent(command.content))(_ => None) andThen transaction.pure()
+        modifyEventSource(Source, ExampleEvent(command.content))(_ => None) andThen behavior.pure()
       }
 
       subject.send(ExampleCommand("hello"))
@@ -44,7 +44,7 @@ class CommandBusSpec extends org.specs2.mutable.SpecificationWithJUnit {
 
     "rollback rejected unit of work" in new Context {
       subject.register[AnotherCommand] {command =>
-        modifyEventSource(Source, ExampleEvent(command.content))(_ => None) andThen transaction.rollback
+        modifyEventSource(Source, ExampleEvent(command.content))(_ => None) andThen behavior.rollback
       }
 
       subject.send(AnotherCommand("hello"))

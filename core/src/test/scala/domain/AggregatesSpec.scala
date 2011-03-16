@@ -29,7 +29,7 @@ class AggregatesSpec extends org.specs2.mutable.SpecificationWithJUnit {
     val TestId1 = newIdentifier
 
     val justCreated = ExampleAggregateRoot.create(TestId1, "hello").result
-    val updated = transaction.pure(justCreated).flatMap(_.update("world")).result
+    val updated = behavior.pure(justCreated).flatMap(_.update("world")).result
     val different = ExampleAggregateRoot.create(TestId1, "different?").result
   }
 

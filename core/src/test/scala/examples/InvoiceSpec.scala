@@ -1,7 +1,7 @@
 package com.zilverline.es2
 package examples
 
-import commands._, domain._, eventstore._, transaction._
+import behavior._, commands._, domain._, eventstore._
 
 case class InvoiceItem(id: Int, description: String, amount: BigDecimal)
 
@@ -20,7 +20,7 @@ sealed trait Invoice extends AggregateRoot {
 }
 
 object Invoice extends AggregateFactory[Invoice] {
-  def createDraft(id: Identifier): Transaction[DraftInvoice] = created(id, InvoiceDraftCreated())
+  def createDraft(id: Identifier): Behavior[DraftInvoice] = created(id, InvoiceDraftCreated())
 
   protected[this] def applyEvent = created
 
@@ -34,11 +34,11 @@ case class DraftInvoice(
   items: Map[Int, InvoiceItem] = Map.empty
   ) extends Invoice {
 
-  def changeRecipient(recipient: Option[String]): Transaction[DraftInvoice] = {
+  def changeRecipient(recipient: Option[String]): Behavior[DraftInvoice] = {
     recipientChanged(InvoiceRecipientChanged(recipient.map(_.trim).filter(_.nonEmpty)))
   }
 
-  def addItem(description: String, amount: BigDecimal): Transaction[DraftInvoice] = {
+  def addItem(description: String, amount: BigDecimal): Behavior[DraftInvoice] = {
     val item = InvoiceItem(nextItemId, description, amount)
     itemAdded(InvoiceItemAdded(item, totalAmount + amount))
   }

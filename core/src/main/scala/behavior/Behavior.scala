@@ -1,7 +1,7 @@
 package com.zilverline.es2
-package transaction
+package behavior
 
-private[transaction] case class TrackedEventSource[+A](
+private[behavior] case class TrackedEventSource[+A](
   id: Identifier,
   originalRevision: Revision = InitialRevision,
   changes: IndexedSeq[DomainEvent] = IndexedSeq.empty,
@@ -15,7 +15,7 @@ private[transaction] case class TrackedEventSource[+A](
   }
 }
 
-private[transaction] case class TrackedEventSources(eventSources: Map[Identifier, TrackedEventSource[Any]] = Map.empty) {
+private[behavior] case class TrackedEventSources(eventSources: Map[Identifier, TrackedEventSource[Any]] = Map.empty) {
   def getEventSource(eventSourceId: Identifier): Option[Any] = eventSources.get(eventSourceId).flatMap(_.currentValue)
 
   def trackEventSource(eventSourceId: Identifier, originalRevision: Revision, value: Any) = {
@@ -30,32 +30,32 @@ private[transaction] case class TrackedEventSources(eventSources: Map[Identifier
   }
 }
 
-case class TransactionState[+A](tracked: TrackedEventSources, result: A)
+case class Reaction[+A](tracked: TrackedEventSources, result: A)
 
-trait Transaction[+A] {
-  def apply(tracked: TrackedEventSources): TransactionState[A]
+trait Behavior[+A] {
+  def apply(tracked: TrackedEventSources): Reaction[A]
 
   def map[B](f: A => B) = flatMap(a => pure(f(a)))
 
-  def flatMap[B](f: A => Transaction[B]) = Transaction {tracked =>
+  def flatMap[B](f: A => Behavior[B]) = Behavior {tracked =>
     this(tracked) match {
-      case TransactionState(tracked, result) => f(result)(tracked)
+      case Reaction(tracked, result) => f(result)(tracked)
     }
   }
 
-  def >>=[B](f: A => Transaction[B]) = flatMap(f)
+  def >>=[B](f: A => Behavior[B]) = flatMap(f)
 
-  def andThen[B](f: Transaction[B]) = this >>= (_ => f)
+  def andThen[B](f: Behavior[B]) = this >>= (_ => f)
 
   def execute = apply(TrackedEventSources())
 
   def result = execute match {
-    case TransactionState(_, result) => result
+    case Reaction(_, result) => result
   }
 }
 
-object Transaction {
-  def apply[Result](callback: TrackedEventSources => TransactionState[Result]) = new Transaction[Result] {
+object Behavior {
+  def apply[Result](callback: TrackedEventSources => Reaction[Result]) = new Behavior[Result] {
     def apply(tracked: TrackedEventSources) = callback(tracked)
   }
 }

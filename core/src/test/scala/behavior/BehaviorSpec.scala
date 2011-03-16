@@ -1,9 +1,9 @@
 package com.zilverline.es2
-package transaction
+package behavior
 
 import eventstore._
 
-class TransactionSpec extends org.specs2.mutable.SpecificationWithJUnit {
+class BehaviorSpec extends org.specs2.mutable.SpecificationWithJUnit {
 
   trait Context extends org.specs2.execute.Success {
     val eventStore = new MemoryEventStore
