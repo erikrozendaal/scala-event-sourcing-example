@@ -9,14 +9,6 @@ class Aggregates(factories: AggregateFactory*) extends EventProcessor[DomainEven
     aggregates synchronized {aggregates.get(aggregate)}
   }
 
-  def putIfNewer(aggregate: AggregateRoot, revision: Revision) {
-    aggregates synchronized {
-      val (current, _) = aggregates.getOrElseUpdate(aggregate.internalId, (revision, aggregate))
-      if (revision > current)
-        aggregates.put(aggregate.internalId, (revision, aggregate))
-    }
-  }
-
   def applyEvent = committedEvent => {
     aggregates synchronized {
       val current = get(committedEvent.eventSourceId)

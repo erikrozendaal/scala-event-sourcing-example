@@ -15,10 +15,7 @@ object TestDatabase {
     Class.forName(jdbcDriver)
 
     SessionFactory.concreteFactory = Some {
-      () =>
-        val result = Session.create(java.sql.DriverManager.getConnection(jdbcUrl), new H2Adapter)
-        // result.setLogger(println)
-        result
+      () => Session.create(java.sql.DriverManager.getConnection(jdbcUrl), new H2Adapter)
     }
 
     transaction {
@@ -34,19 +31,22 @@ object TestDatabase {
 
 class SquerylEventStoreSpec extends EventStoreSpec {
 
-  val serializer = new JsonSerializer()(Serialization.formats(new ReflectionTypeHints))
-  val subject = new SquerylEventStore(serializer)
+  sequential
 
   TestDatabase.initialize
+
+  def serializer = new JsonSerializer()(Serialization.formats(new ReflectionTypeHints))
+  def makeEmptyEventStore = {
+    TestDatabase.clear
+    new SquerylEventStore(serializer)
+  }
 
   val Source = newIdentifier
 
   "SquerylEventStore" should {
-    doBefore {TestDatabase.clear}
-
     val originals = ExampleEvent("example") :: AnotherEvent("another") :: Nil
 
-    forExample("commit and load events") in {
+    forExample("commit and load events") ! new Context {
       subject.commit(Commit(Source, 0, originals))
 
       subject.load(Source) must beEqualTo(Seq(
@@ -54,7 +54,7 @@ class SquerylEventStoreSpec extends EventStoreSpec {
         Committed(Source, 2, AnotherEvent("another"))))
     }
 
-    forExample("invoke listeners for each committed event") in {
+    forExample("invoke listeners for each committed event") ! new Context {
       var committed: Option[CommittedEvent] = None
       subject addListener {
         c => committed = Some(c)
@@ -65,7 +65,7 @@ class SquerylEventStoreSpec extends EventStoreSpec {
       committed must beEqualTo(Some(Committed(Source, 1, ExampleEvent("example"))))
     }
 
-    forExample("replay previously committed events") in {
+    forExample("replay previously committed events") ! new Context {
       var replayed: ArrayBuffer[CommittedEvent] = ArrayBuffer.empty
       subject.commit(Commit(Source, 0, originals))
 
@@ -77,5 +77,4 @@ class SquerylEventStoreSpec extends EventStoreSpec {
         Committed(Source, 2, AnotherEvent("another"))))
     }
   }
-
 }

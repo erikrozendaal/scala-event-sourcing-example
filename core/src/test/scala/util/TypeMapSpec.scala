@@ -1,7 +1,7 @@
 package com.zilverline.es2
 package util
 
-class TypeMapSpec extends org.specs.Specification {
+class TypeMapSpec extends org.specs2.mutable.SpecificationWithJUnit {
   val zero = TypeMap.empty
 
   trait Root
@@ -27,5 +27,4 @@ class TypeMapSpec extends org.specs.Specification {
     s2.getMostSpecific(classOf[Child2]) must beEqualTo(Some("child2 value"))
     s2.getMostSpecific(classOf[Multiparent]) must beEqualTo(Some("child1 value"))
   }
-
 }

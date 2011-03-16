@@ -1,9 +1,9 @@
 package com.zilverline.es2
 package domain
 
-import eventstore._
+import org.specs2.execute.Success
 
-class AggregatesSpec extends org.specs.Specification {
+class AggregatesSpec extends org.specs2.mutable.SpecificationWithJUnit {
 
   case class TestAR1(id: Identifier, content: String) extends AggregateRoot {
     type Event = ExampleEvent
@@ -25,35 +25,18 @@ class AggregatesSpec extends org.specs.Specification {
     private def updated = when[ExampleEvent] {event => TestAR1(id, event.content)}
   }
 
-  val subject = new Aggregates(InitialTestAR1.apply _)
+  trait Context extends Success {
+    val subject = new Aggregates(InitialTestAR1.apply _)
 
-  val TestId1 = newIdentifier
-  val justCreated = InitialTestAR1(TestId1).update("hello").result
-  val updated = transaction.pure(justCreated).flatMap(_.update("world")).result
-  val different = InitialTestAR1(TestId1).update("different?").result
+    val TestId1 = newIdentifier
 
-  "new aggregate store" should {
-    subject.putIfNewer(updated, 2)
-
-    "store aggregates with revision number" in {
-      subject.get(TestId1) must beEqualTo(Some(2, updated))
-    }
-
-    "not update stored aggregate when revision is equal or lower" in {
-      subject.putIfNewer(different, 1)
-
-      subject.get(TestId1) must beEqualTo(Some(2, updated))
-    }
-
-    "only update stored aggregate when revision is higher" in {
-      subject.putIfNewer(different, 3)
-
-      subject.get(TestId1) must beEqualTo(Some(3, different))
-    }
+    val justCreated = InitialTestAR1(TestId1).update("hello").result
+    val updated = transaction.pure(justCreated).flatMap(_.update("world")).result
+    val different = InitialTestAR1(TestId1).update("different?").result
   }
 
   "aggregate store" should {
-    "rebuild aggregates when replaying events" in {
+    "rebuild aggregates when replaying events" in new Context {
       subject applyEvent Committed(TestId1, 1, ExampleEvent("hello"))
       subject.get(TestId1) must beEqualTo(Some(1, justCreated))
 
@@ -64,7 +47,7 @@ class AggregatesSpec extends org.specs.Specification {
       subject.get(TestId1) must beEqualTo(Some(2, updated))
     }
 
-    "ignore unknown event type" in {
+    "ignore unknown event type" in new Context {
       subject applyEvent Committed(TestId1, 1, AnotherEvent("unknown"))
       subject.get(TestId1) must beNone
     }

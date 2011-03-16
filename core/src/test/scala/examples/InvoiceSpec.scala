@@ -1,12 +1,7 @@
 package com.zilverline.es2
 package examples
 
-import org.specs.Specification
-
-import transaction._
-import commands._
-import domain._
-import eventstore.Commit
+import commands._, domain._, eventstore._, transaction._
 
 case class InvoiceItem(id: Int, description: String, amount: BigDecimal)
 
@@ -76,35 +71,36 @@ case class InvoiceDocument(
   }
 }
 
-class InvoiceSpec extends Specification {
+class InvoiceSpec extends org.specs2.mutable.SpecificationWithJUnit {
 
-  val invoiceId = newIdentifier
+  trait Context extends org.specs2.execute.Success {
+    val invoiceId = newIdentifier
 
-  val eventStore = new eventstore.MemoryEventStore
-  val aggregates = new Aggregates(InitialInvoice)
-  eventStore.addListener(committed => aggregates.applyEvent(committed))
-  val commands = new CommandBus(eventStore)
-  val repository = new AggregateRepository[AggregateRoot](aggregates)
+    val eventStore = new eventstore.MemoryEventStore
+    val aggregates = new Aggregates(InitialInvoice)
+    eventStore.addListener(committed => aggregates.applyEvent(committed))
+    val commands = new CommandBus(eventStore)
+    val repository = new AggregateRepository[AggregateRoot](aggregates)
 
-  commands.register[InvoiceCommand] {
-    case CreateDraftInvoice(invoiceId) => InitialInvoice(invoiceId).createDraft
-    case ChangeInvoiceRecipient(invoiceId, recipient) =>
-      repository.update(invoiceId) {invoice: DraftInvoice => invoice.changeRecipient(recipient)}
-    case AddInvoiceItem(invoiceId, description, price) =>
-      repository.update(invoiceId) {invoice: DraftInvoice => invoice.addItem(description, price)}
-  }
-
-  "client" should {
-    "be able to create invoice" in {
-      commands.send(CreateDraftInvoice(invoiceId))
-
-      eventStore.load(invoiceId) must contain(Committed(invoiceId, 1, InvoiceDraftCreated()))
+    commands.register[InvoiceCommand] {
+      case CreateDraftInvoice(invoiceId) => InitialInvoice(invoiceId).createDraft
+      case ChangeInvoiceRecipient(invoiceId, recipient) =>
+        repository.update(invoiceId) {invoice: DraftInvoice => invoice.changeRecipient(recipient)}
+      case AddInvoiceItem(invoiceId, description, price) =>
+        repository.update(invoiceId) {invoice: DraftInvoice => invoice.addItem(description, price)}
     }
   }
 
   "new invoice" should {
-    eventStore.commit(Commit(invoiceId, 0, Seq(InvoiceDraftCreated())))
-    "allow items to be added" in {
+    "be created" in new Context {
+      commands.send(CreateDraftInvoice(invoiceId))
+
+      eventStore.load(invoiceId) must contain(Committed(invoiceId, 1, InvoiceDraftCreated()))
+    }
+
+    "allow items to be added" in new Context {
+      eventStore.commit(Commit(invoiceId, 0, Seq(InvoiceDraftCreated())))
+
       commands.send(AddInvoiceItem(invoiceId, "beverage", 2.95))
       commands.send(AddInvoiceItem(invoiceId, "sandwich", 4.95))
 

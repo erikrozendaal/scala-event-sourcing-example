@@ -12,7 +12,7 @@ class MemoryEventStore extends EventStore {
       val stored = storedEvents.getOrElse(attempt.source, IndexedSeq.empty)
       val actual = stored.size
       if (attempt.revision != actual)
-        throw new OptimisticLockingException("sequence number does not match expected <" + attempt.revision + "> was <" + actual + ">")
+        throw new OptimisticLockingException("sequence number does not match. Required <" + actual + "> was <" + attempt.revision  + ">")
 
       val committed = makeCommittedEvents(attempt)
       storedEvents.put(attempt.source, stored ++ committed)
