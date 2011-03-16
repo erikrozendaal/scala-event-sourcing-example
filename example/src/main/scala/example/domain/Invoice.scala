@@ -8,10 +8,10 @@ trait Invoice extends AggregateRoot {
   protected[this] type Event = InvoiceEvent
 }
 
-case class InitialInvoice(id: Identifier) extends Invoice {
-  def createDraft = created(InvoiceCreated())
+object Invoice extends AggregateFactory[Invoice] {
+  def createDraft(id: Identifier) = created(id, InvoiceCreated())
   protected[this] def applyEvent = created
-  private def created = when[InvoiceCreated] {event => new DraftInvoice(id)}
+  private def created = when[InvoiceCreated] {event => new DraftInvoice(event.eventSourceId)}
 }
 
 case class DraftInvoice(

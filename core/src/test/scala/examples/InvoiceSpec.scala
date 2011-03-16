@@ -19,12 +19,12 @@ sealed trait Invoice extends AggregateRoot {
   protected[this] type Event = InvoiceEvent
 }
 
-case class InitialInvoice(protected[this] val id: Identifier) extends Invoice {
-  def createDraft: Transaction[DraftInvoice] = created(InvoiceDraftCreated())
+object Invoice extends AggregateFactory[Invoice] {
+  def createDraft(id: Identifier): Transaction[DraftInvoice] = created(id, InvoiceDraftCreated())
 
   protected[this] def applyEvent = created
 
-  private def created = when[InvoiceDraftCreated] {event => DraftInvoice(id)}
+  private def created = when[InvoiceDraftCreated] {event => DraftInvoice(event.eventSourceId)}
 }
 
 case class DraftInvoice(
@@ -77,13 +77,13 @@ class InvoiceSpec extends org.specs2.mutable.SpecificationWithJUnit {
     val invoiceId = newIdentifier
 
     val eventStore = new eventstore.MemoryEventStore
-    val aggregates = new Aggregates(InitialInvoice)
+    val aggregates = new Aggregates(Invoice)
     eventStore.addListener(committed => aggregates.applyEvent(committed))
     val commands = new CommandBus(eventStore)
     val repository = new AggregateRepository[AggregateRoot](aggregates)
 
     commands.register[InvoiceCommand] {
-      case CreateDraftInvoice(invoiceId) => InitialInvoice(invoiceId).createDraft
+      case CreateDraftInvoice(invoiceId) => Invoice.createDraft(invoiceId)
       case ChangeInvoiceRecipient(invoiceId, recipient) =>
         repository.update(invoiceId) {invoice: DraftInvoice => invoice.changeRecipient(recipient)}
       case AddInvoiceItem(invoiceId, description, price) =>

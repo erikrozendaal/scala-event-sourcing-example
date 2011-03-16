@@ -1,43 +1,45 @@
 package com.zilverline.es2
 package transaction
 
-private[transaction] case class EventSource[+A](id: Identifier, original: Revision, value: A, changes: IndexedSeq[DomainEvent]) {
-  def current = original + changes.size
+private[transaction] case class TrackedEventSource[+A](
+  id: Identifier,
+  originalRevision: Revision = InitialRevision,
+  changes: IndexedSeq[DomainEvent] = IndexedSeq.empty,
+  currentValue: Option[A] = None
+  ) {
+  def currentRevision = originalRevision + changes.size
 
-  def modify[B, E <: DomainEvent](event: E)(callback: Uncommitted[E] => B): EventSource[B] = {
-    val updatedValue = callback(Uncommitted(id, current + 1, event))
-    copy(value = updatedValue, changes = changes :+ event)
+  def modify[E <: DomainEvent, B](event: E)(callback: Uncommitted[E] => B): TrackedEventSource[B] = {
+    val updatedValue = callback(Uncommitted(id, currentRevision + 1, event))
+    copy(changes = changes :+ event, currentValue = Some(updatedValue))
   }
 }
 
-case class UnitOfWork(eventSources: Map[Identifier, EventSource[Any]] = Map.empty) {
+private[transaction] case class TrackedEventSources(eventSources: Map[Identifier, TrackedEventSource[Any]] = Map.empty) {
+  def getEventSource(eventSourceId: Identifier): Option[Any] = eventSources.get(eventSourceId).flatMap(_.currentValue)
 
-  def getEventSource(source: Identifier): Option[Any] = eventSources.get(source).map(_.value)
-
-  def trackEventSource(source: Identifier, revision: Revision, value: Any) = {
-    require(!eventSources.contains(source), "already tracking " + source)
-    copy(eventSources = eventSources + (source -> EventSource(source, revision, value, IndexedSeq.empty)))
+  def trackEventSource(eventSourceId: Identifier, originalRevision: Revision, value: Any) = {
+    require(!eventSources.contains(eventSourceId), "already tracking " + eventSourceId)
+    copy(eventSources = eventSources + (eventSourceId -> TrackedEventSource(eventSourceId, originalRevision, IndexedSeq.empty, Some(value))))
   }
 
-  def modifyEventSource[A <: DomainEvent, B](source: Identifier, event: A)(callback: Uncommitted[A] => B) = {
-    val originalState = eventSources.getOrElse(source, EventSource(source, 0, None, IndexedSeq.empty))
+  def modifyEventSource[A <: DomainEvent, B](eventSourceId: Identifier, event: A)(callback: Uncommitted[A] => B) = {
+    val originalState = eventSources.getOrElse(eventSourceId, TrackedEventSource(eventSourceId))
     val updatedState = originalState.modify(event)(callback)
-    (copy(eventSources.updated(source, updatedState)), updatedState.value)
+    (copy(eventSources.updated(eventSourceId, updatedState)), updatedState.currentValue.get)
   }
 }
 
-case class TransactionState[+A](uow: UnitOfWork, result: A) {
-  def changes(source: Identifier): Seq[DomainEvent] = uow.eventSources.get(source).map(_.changes).getOrElse(Seq.empty)
-}
+case class TransactionState[+A](tracked: TrackedEventSources, result: A)
 
 trait Transaction[+A] {
-  def apply(uow: UnitOfWork): TransactionState[A]
+  def apply(tracked: TrackedEventSources): TransactionState[A]
 
   def map[B](f: A => B) = flatMap(a => pure(f(a)))
 
-  def flatMap[B](f: A => Transaction[B]) = Transaction {uow =>
-    this(uow) match {
-      case TransactionState(uow, result) => f(result)(uow)
+  def flatMap[B](f: A => Transaction[B]) = Transaction {tracked =>
+    this(tracked) match {
+      case TransactionState(tracked, result) => f(result)(tracked)
     }
   }
 
@@ -45,15 +47,15 @@ trait Transaction[+A] {
 
   def andThen[B](f: Transaction[B]) = this >>= (_ => f)
 
-  def trigger = apply(UnitOfWork())
+  def execute = apply(TrackedEventSources())
 
-  def result = trigger match {
+  def result = execute match {
     case TransactionState(_, result) => result
   }
 }
 
 object Transaction {
-  def apply[Result](callback: UnitOfWork => TransactionState[Result]) = new Transaction[Result] {
-    def apply(uow: UnitOfWork) = callback(uow)
+  def apply[Result](callback: TrackedEventSources => TransactionState[Result]) = new Transaction[Result] {
+    def apply(tracked: TrackedEventSources) = callback(tracked)
   }
 }

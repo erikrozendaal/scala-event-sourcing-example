@@ -11,10 +11,10 @@ class CommandBus(eventStore: EventStore) {
     val handler = handlers.getMostSpecific(command.getClass)
       .getOrElse(throw new IllegalArgumentException("no handler for found command: " + command))
 
-    handler.invokeWithCommand(command)(UnitOfWork()) match {
+    handler.invokeWithCommand(command).execute match {
       case TransactionState(uow, result) =>
         for (source <- uow.eventSources.values) {
-          eventStore.commit(Commit(source.id, source.original, source.changes))
+          eventStore.commit(Commit(source.id, source.originalRevision, source.changes))
         }
     }
   }

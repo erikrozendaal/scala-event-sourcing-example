@@ -5,7 +5,7 @@ import org.specs2.execute.Success
 
 class AggregatesSpec extends org.specs2.mutable.SpecificationWithJUnit {
 
-  case class TestAR1(id: Identifier, content: String) extends AggregateRoot {
+  case class ExampleAggregateRoot(id: Identifier, content: String) extends AggregateRoot {
     type Event = ExampleEvent
 
     def update(content: String) = updated(ExampleEvent(content))
@@ -15,36 +15,34 @@ class AggregatesSpec extends org.specs2.mutable.SpecificationWithJUnit {
     private def updated = when[ExampleEvent] {event => copy(content = event.content)}
   }
 
-  case class InitialTestAR1(id: Identifier) extends AggregateRoot {
-    type Event = ExampleEvent
+  object ExampleAggregateRoot extends AggregateFactory[ExampleAggregateRoot] {
+    def create(id: Identifier, content: String) = created(id, ExampleEvent(content))
 
-    def update(content: String) = updated(ExampleEvent(content))
+    protected[this] def applyEvent = created
 
-    protected[this] def applyEvent = updated
-
-    private def updated = when[ExampleEvent] {event => TestAR1(id, event.content)}
+    private def created = when[ExampleEvent] {event => ExampleAggregateRoot(event.eventSourceId, event.content)}
   }
 
   trait Context extends Success {
-    val subject = new Aggregates(InitialTestAR1.apply _)
+    val subject = new Aggregates(ExampleAggregateRoot)
 
     val TestId1 = newIdentifier
 
-    val justCreated = InitialTestAR1(TestId1).update("hello").result
+    val justCreated = ExampleAggregateRoot.create(TestId1, "hello").result
     val updated = transaction.pure(justCreated).flatMap(_.update("world")).result
-    val different = InitialTestAR1(TestId1).update("different?").result
+    val different = ExampleAggregateRoot.create(TestId1, "different?").result
   }
 
   "aggregate store" should {
     "rebuild aggregates when replaying events" in new Context {
       subject applyEvent Committed(TestId1, 1, ExampleEvent("hello"))
-      subject.get(TestId1) must beEqualTo(Some(1, justCreated))
+      subject.get(TestId1) must beEqualTo(Some(Aggregate(TestId1, 1, justCreated)))
 
       subject applyEvent Committed(TestId1, 2, ExampleEvent("world"))
-      subject.get(TestId1) must beEqualTo(Some(2, updated))
+      subject.get(TestId1) must beEqualTo(Some(Aggregate(TestId1, 2, updated)))
 
       subject applyEvent Committed(TestId1, 1, ExampleEvent("old and out of order"))
-      subject.get(TestId1) must beEqualTo(Some(2, updated))
+      subject.get(TestId1) must beEqualTo(Some(Aggregate(TestId1, 2, updated)))
     }
 
     "ignore unknown event type" in new Context {

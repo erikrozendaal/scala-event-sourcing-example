@@ -7,7 +7,7 @@ class TransactionSpec extends org.specs2.mutable.SpecificationWithJUnit {
 
   trait Context extends org.specs2.execute.Success {
     val eventStore = new MemoryEventStore
-    val emptyUnitOfWork = UnitOfWork()
+    val emptyUnitOfWork = TrackedEventSources()
 
     val Source = newIdentifier
   }
@@ -15,7 +15,7 @@ class TransactionSpec extends org.specs2.mutable.SpecificationWithJUnit {
   "track event source" in new Context {
     val result = trackEventSource(Source, 3, "three").apply(emptyUnitOfWork)
 
-    result.uow.eventSources(Source) must beEqualTo(EventSource(Source, 3, "three", IndexedSeq.empty))
+    result.tracked.eventSources(Source) must beEqualTo(TrackedEventSource(Source, 3, IndexedSeq.empty, Some("three")))
   }
 
   "track current event source revision" in new Context {
@@ -23,6 +23,6 @@ class TransactionSpec extends org.specs2.mutable.SpecificationWithJUnit {
       .andThen(modifyEventSource(Source, ExampleEvent("example")){ _ => "example" })
       .apply(emptyUnitOfWork)
 
-    result.uow.eventSources(Source) must beEqualTo(EventSource(Source, 1, "example", IndexedSeq(ExampleEvent("example"))))
+    result.tracked.eventSources(Source) must beEqualTo(TrackedEventSource(Source, 1, IndexedSeq(ExampleEvent("example")), Some("example")))
   }
 }

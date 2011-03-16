@@ -1,17 +1,26 @@
 package com.zilverline.es2
 package domain
 
-import transaction._
-import util._
+import transaction._, util._
 
-class AggregateEventHandler[-A <: DomainEvent, +B](source: Identifier, callback: Recorded[A] => B) {
-  def apply(event: A) = modifyEventSource(source, event)(callback)
+trait AggregateEventHandler[-A <: DomainEvent, +B] {
+  private[domain] def applyFromHistory(event: Recorded[A]): B
+}
+
+class AggregateRootEventHandler[-A <: DomainEvent, +B](aggregateId: Identifier, callback: Recorded[A] => B) extends AggregateEventHandler[A, B] {
+  def apply(event: A) = modifyEventSource(aggregateId, event)(callback)
+
+  private[domain] def applyFromHistory(event: Recorded[A]): B = callback(event)
+}
+
+class AggregateFactoryEventHandler[-A <: DomainEvent, +B](callback: Recorded[A] => B) extends AggregateEventHandler[A, B] {
+  def apply(aggregateId: Identifier, event: A) = modifyEventSource(aggregateId, event)(callback)
 
   private[domain] def applyFromHistory(event: Recorded[A]): B = callback(event)
 }
 
 object AggregateEventHandler {
-  implicit def asPartialFunction[A <: DomainEvent, B](handler: AggregateEventHandler[A, B])(implicit m: Manifest[A]) =
+  implicit def partialFunctionFromAggregateEventHandler[A <: DomainEvent, B](handler: AggregateEventHandler[A, B])(implicit m: Manifest[A]) =
     new PartialFunction[RecordedEvent, B] {
       def apply(recorded: RecordedEvent) =
         if (isDefinedAt(recorded)) handler.applyFromHistory(recorded.asInstanceOf[Committed[A]])
@@ -21,27 +30,44 @@ object AggregateEventHandler {
     }
 }
 
-trait AggregateRoot {
+trait EventSource[ES <: EventSource[ES]] {
+  protected[this] def applyEvent: PartialFunction[RecordedEvent, ES]
+
+  private[domain] def internalApplyEvent = applyEvent
+}
+
+trait AggregateRoot extends EventSource[AggregateRoot] {
   protected[this] type Event <: DomainEvent
 
   protected[this] def id: Identifier
-
-  protected[this] def applyEvent: RecordedEvent PartialFunction AggregateRoot
 
   protected[this] def when[A <: Event] = new When[A]
 
   implicit protected[this] def payloadOfRecordedEvent[A <: Event](recorded: Recorded[A]): A = recorded.event
 
   protected[this] class When[A <: DomainEvent] {
-    def apply[B](callback: Recorded[A] => B) = new AggregateEventHandler(id, callback)
+    def apply[B](callback: Recorded[A] => B) = new AggregateRootEventHandler(id, callback)
   }
 
   /* APIs for internal use */
   private[domain] type InternalEvent = Event
+}
 
-  private[domain] def internalId = id
+trait AggregateFactory[AR <: AggregateRoot] extends EventSource[AggregateRoot] {
+  def loadFromHistory(history: Iterable[RecordedEvent]): AR = {
+    val aggregate = applyEvent(history.head)
+    (aggregate /: history.tail)(_.internalApplyEvent(_)).asInstanceOf[AR]
+  }
 
-  private[domain] def internalApplyEvent = applyEvent
+  protected[this] type Event = AR#InternalEvent
+
+  protected[this] def when[A <: Event] = new When[A]
+
+  implicit protected[this] def payloadOfRecordedEvent[A <: Event](recorded: Recorded[A]): A = recorded.event
+
+  protected[this] class When[A <: DomainEvent] {
+    def apply[B](callback: Recorded[A] => B) = new AggregateFactoryEventHandler(callback)
+  }
 }
 
 class AggregateRepository[-AR <: AggregateRoot : NotNothing](aggregates: Aggregates) {
@@ -51,10 +77,10 @@ class AggregateRepository[-AR <: AggregateRoot : NotNothing](aggregates: Aggrega
         result => TransactionState(uow, result.asInstanceOf[T])
       } getOrElse {
         aggregates.get(id) map {
-          result =>
-            TransactionState(uow.trackEventSource(id, result._1, result._2), result._2.asInstanceOf[T])
+          aggregate =>
+            TransactionState(uow.trackEventSource(id, aggregate.revision, aggregate.root), aggregate.root.asInstanceOf[T])
         } getOrElse {
-          throw new IllegalArgumentException("event source <" + id + "> not found")
+          throw new IllegalArgumentException("aggregate <" + id + "> not found")
         }
       }
   }

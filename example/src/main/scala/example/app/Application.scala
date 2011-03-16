@@ -16,7 +16,7 @@ import example.model._
 
 object Application {
   val eventSerializer = new JsonSerializer()(Serialization.formats(new ReflectionTypeHints))
-  val aggregates = new Aggregates(InitialInvoice)
+  val aggregates = new Aggregates(Invoice)
   val repository = new AggregateRepository[Invoice](aggregates)
   val reports = {
     val result = new Reports
@@ -35,14 +35,11 @@ object Application {
   }
   val commands = {
     val result = new CommandBus(eventStore)
-    result register {
-      command: CreateDraftInvoice => InitialInvoice(command.invoiceId).createDraft
+    result.register[CreateDraftInvoice] {command =>
+      Invoice.createDraft(command.invoiceId)
     }
-    result register {
-      command: ChangeInvoiceRecipient =>
-        repository.update(command.invoiceId) {
-          invoice: DraftInvoice => invoice.changeRecipient(command.recipient)
-        }
+    result.register[ChangeInvoiceRecipient] {command =>
+      repository.get[DraftInvoice](command.invoiceId) >>= (_.changeRecipient(command.recipient))
     }
     result.registerHandler(CommandHandler.updateCommandHandler)
     result
@@ -76,6 +73,4 @@ object Application {
   } catch {
     case exception => println("Event store schema creation failed, maybe the tables already exist? " + exception.getMessage)
   }
-
-
 }

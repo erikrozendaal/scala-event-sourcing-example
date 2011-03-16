@@ -33,9 +33,8 @@ class CommandBusSpec extends org.specs2.mutable.SpecificationWithJUnit {
     }
 
     "commit accepted unit of work" in new Context {
-      subject register {
-        command: ExampleCommand =>
-          modifyEventSource(Source, ExampleEvent(command.content))(_ => None) andThen transaction.pure()
+      subject.register[ExampleCommand] {command =>
+        modifyEventSource(Source, ExampleEvent(command.content))(_ => None) andThen transaction.pure()
       }
 
       subject.send(ExampleCommand("hello"))
@@ -44,9 +43,8 @@ class CommandBusSpec extends org.specs2.mutable.SpecificationWithJUnit {
     }
 
     "rollback rejected unit of work" in new Context {
-      subject register {
-        command: AnotherCommand =>
-          modifyEventSource(Source, ExampleEvent(command.content))(_ => None) andThen transaction.rollback
+      subject.register[AnotherCommand] {command =>
+        modifyEventSource(Source, ExampleEvent(command.content))(_ => None) andThen transaction.rollback
       }
 
       subject.send(AnotherCommand("hello"))
