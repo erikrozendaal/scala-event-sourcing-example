@@ -18,7 +18,7 @@ case class InvoiceReport(
 
   def applyEvent = committed => {
     val invoiceId = committed.eventSourceId
-    committed.event match {
+    committed.payload match {
       case InvoiceCreated() =>
         copy(invoices + (invoiceId -> InvoiceDocument(invoiceId)), invoiceId :: recent)
 

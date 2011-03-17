@@ -1,6 +1,7 @@
 package com.zilverline.es2
 package domain
 
+import behavior._
 import org.specs2.execute.Success
 
 class AggregatesSpec extends org.specs2.mutable.SpecificationWithJUnit {
@@ -16,7 +17,7 @@ class AggregatesSpec extends org.specs2.mutable.SpecificationWithJUnit {
   }
 
   object ExampleAggregateRoot extends AggregateFactory[ExampleAggregateRoot] {
-    def create(id: Identifier, content: String) = created(id, ExampleEvent(content))
+    def create(id: Identifier, content: String): Behavior[ExampleAggregateRoot] = created(id, ExampleEvent(content))
 
     protected[this] def applyEvent = created
 
@@ -25,12 +26,13 @@ class AggregatesSpec extends org.specs2.mutable.SpecificationWithJUnit {
 
   trait Context extends Success {
     val subject = new Aggregates(ExampleAggregateRoot)
+    val repository = new AggregateRepository[ExampleAggregateRoot](subject)
 
     val TestId1 = newIdentifier
 
-    val justCreated = ExampleAggregateRoot.create(TestId1, "hello").result
-    val updated = behavior.pure(justCreated).flatMap(_.update("world")).result
-    val different = ExampleAggregateRoot.create(TestId1, "different?").result
+    val justCreated = ExampleAggregateRoot.create(TestId1, "hello").execute.result
+    val updated = behavior.pure(justCreated).flatMap(_.update("world")).execute.result
+    val different = ExampleAggregateRoot.create(TestId1, "different?").execute.result
   }
 
   "aggregate store" should {
@@ -48,6 +50,34 @@ class AggregatesSpec extends org.specs2.mutable.SpecificationWithJUnit {
     "ignore unknown event type" in new Context {
       subject applyEvent Committed(TestId1, 1, AnotherEvent("unknown"))
       subject.get(TestId1) must beNone
+    }
+  }
+
+  "aggregate repository" should {
+    "fail when aggregate does not exist" in new Context {
+      repository.get[ExampleAggregateRoot](newIdentifier).execute must throwA[IllegalArgumentException]
+    }
+    "use aggregates store to find initial version" in new Context {
+      subject applyEvent Committed(TestId1, 1, ExampleEvent("hello"))
+
+      repository.get[ExampleAggregateRoot](TestId1).execute.result must_== ExampleAggregateRoot(TestId1, "hello")
+    }
+    "use tracked event sources to find current version" in new Context {
+      subject applyEvent Committed(TestId1, 1, ExampleEvent("hello"))
+
+      val aggregate = repository.get[ExampleAggregateRoot](TestId1)
+        .andThen(repository.get[ExampleAggregateRoot](TestId1))
+        .execute.result
+
+      aggregate must_== ExampleAggregateRoot(TestId1, "hello")
+    }
+    "use tracked event sources to find the updated version" in new Context {
+      val aggregate = ExampleAggregateRoot.create(TestId1, "hello")
+        .flatMap(_.update("world"))
+        .andThen(repository.get[ExampleAggregateRoot](TestId1))
+        .execute.result
+
+      aggregate must_== ExampleAggregateRoot(TestId1, "world")
     }
   }
 }

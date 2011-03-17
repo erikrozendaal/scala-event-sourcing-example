@@ -26,7 +26,7 @@ object AggregateEventHandler {
         if (isDefinedAt(recorded)) handler.applyFromHistory(recorded.asInstanceOf[Committed[A]])
         else error("unhandled event " + recorded + " for " + this)
 
-      def isDefinedAt(recorded: RecordedEvent) = m.erasure.isInstance(recorded.event)
+      def isDefinedAt(recorded: RecordedEvent) = m.erasure.isInstance(recorded.payload)
     }
 }
 
@@ -43,7 +43,7 @@ trait AggregateRoot extends EventSource[AggregateRoot] {
 
   protected[this] def when[A <: Event] = new When[A]
 
-  implicit protected[this] def payloadOfRecordedEvent[A <: Event](recorded: Recorded[A]): A = recorded.event
+  implicit protected[this] def payloadOfRecordedEvent[A <: Event](recorded: Recorded[A]): A = recorded.payload
 
   protected[this] class When[A <: DomainEvent] {
     def apply[B](callback: Recorded[A] => B) = new AggregateRootEventHandler(id, callback)
@@ -63,7 +63,7 @@ trait AggregateFactory[AR <: AggregateRoot] extends EventSource[AggregateRoot] {
 
   protected[this] def when[A <: Event] = new When[A]
 
-  implicit protected[this] def payloadOfRecordedEvent[A <: Event](recorded: Recorded[A]): A = recorded.event
+  implicit protected[this] def payloadOfRecordedEvent[A <: Event](recorded: Recorded[A]): A = recorded.payload
 
   protected[this] class When[A <: DomainEvent] {
     def apply[B](callback: Recorded[A] => B) = new AggregateFactoryEventHandler(callback)
@@ -71,14 +71,14 @@ trait AggregateFactory[AR <: AggregateRoot] extends EventSource[AggregateRoot] {
 }
 
 class AggregateRepository[-AR <: AggregateRoot : NotNothing](aggregates: Aggregates) {
-  def get[T <: AR](id: Identifier): Behavior[T] = Behavior {
+  def get[T <: AR : NotNothing](id: Identifier): Behavior[T] = Behavior {
     tracked =>
       tracked.getEventSource(id) map {
         result => Reaction(tracked, result.asInstanceOf[T])
       } getOrElse {
         aggregates.get(id) map {
           aggregate =>
-            Reaction(tracked.trackEventSource(id, aggregate.revision, aggregate.root), aggregate.root.asInstanceOf[T])
+            tracked.trackEventSource(id, aggregate.revision, aggregate.root).copy(result = aggregate.root.asInstanceOf[T])
         } getOrElse {
           throw new IllegalArgumentException("aggregate <" + id + "> not found")
         }

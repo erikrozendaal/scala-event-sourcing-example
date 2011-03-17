@@ -5,13 +5,11 @@ package object behavior {
 
   def rollback = Behavior(_ => Reaction(TrackedEventSources(), ()))
 
-  def trackEventSource(eventSourceId: Identifier, revision: Revision, value: Any) = Behavior {
-    uow => Reaction(uow.trackEventSource(eventSourceId, revision, value), ())
+  def trackEventSource(eventSourceId: Identifier, revision: Revision, value: Any): Behavior[Unit] = Behavior {
+    uow => uow.trackEventSource(eventSourceId, revision, value)
   }
 
-  def modifyEventSource[A <: DomainEvent, B](source: Identifier, event: A)(f: Uncommitted[A] => B) = Behavior {
-    uow =>
-      val (updated, result) = uow.modifyEventSource(source, event)(f)
-      Reaction(updated, result)
+  def modifyEventSource[A <: DomainEvent, B](source: Identifier, event: A)(f: Uncommitted[A] => B): Behavior[B] = Behavior {
+    uow => uow.modifyEventSource(source, event)(f)
   }
 }

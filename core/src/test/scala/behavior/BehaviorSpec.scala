@@ -2,27 +2,51 @@ package com.zilverline.es2
 package behavior
 
 import eventstore._
+import org.specs2.execute.Result
+import org.scalacheck._, Arbitrary.arbitrary, Prop._
 
-class BehaviorSpec extends org.specs2.mutable.SpecificationWithJUnit {
-  val EventSourceId = newIdentifier
+class BehaviorSpec extends org.specs2.mutable.SpecificationWithJUnit with org.specs2.ScalaCheck {
 
-  trait Context extends org.specs2.execute.Success {
+  "A behavior" should {
+    "track event sources" in behavior().tracksEventSources
+    "track single event source change" in behavior().tracksSingleChange
+    "track multiple changes to a single event source" in behavior().tracksMultipleChangesToSingleEventSource
+  }
+
+  implicit val scalaCheckParameters = set(minTestsOk -> 10)
+  implicit val arbitraryExampleEvent = Arbitrary(for (content <- arbitrary[String]) yield ExampleEvent(content))
+
+  case class behavior() {
+    val EventSourceId = newIdentifier
     val eventStore = new MemoryEventStore
-  }
 
-  "track event source" in new Context {
-    val result = trackEventSource(EventSourceId, 3, "three").execute
+    def tracksEventSources: Result = forAll {(revision: Revision, value: Option[String]) =>
+      (revision >= InitialRevision) ==> {
+        val result = trackEventSource(EventSourceId, revision, value).execute.tracked.eventSources(EventSourceId)
 
-    result.tracked.eventSources(EventSourceId) must beEqualTo(
-      TrackedEventSource(EventSourceId, 3, IndexedSeq.empty, Some("three")))
-  }
+        result == TrackedEventSource(EventSourceId, revision, value, IndexedSeq.empty)
+      }
+    }
 
-  "track current event source revision" in new Context {
-    val result = trackEventSource(EventSourceId, 1, "original")
-      .andThen(modifyEventSource(EventSourceId, ExampleEvent("example")) {_.event.content})
-      .execute
+    def tracksSingleChange: Result = forAll {event: ExampleEvent =>
+      val result = (modifyEventSource(EventSourceId, event) {_.payload.content})
+        .execute.tracked.eventSources(EventSourceId)
 
-    result.tracked.eventSources(EventSourceId) must beEqualTo(
-      TrackedEventSource(EventSourceId, 1, IndexedSeq(ExampleEvent("example")), Some("example")))
+      result.changes == Seq(event) &&
+        result.currentRevision == InitialRevision + 1 &&
+        result.currentValue == event.content
+    }
+
+    def tracksMultipleChangesToSingleEventSource: Result = forAll {events: List[ExampleEvent] =>
+      events.nonEmpty ==> {
+        val result = (pure("") /: events) {(behavior, event) =>
+          behavior.andThen(modifyEventSource(EventSourceId, event) {_.payload.content})
+        }.execute.tracked.eventSources(EventSourceId)
+
+        result.changes == events &&
+          result.currentRevision == InitialRevision + events.size &&
+          result.currentValue == events.last.content
+      }
+    }
   }
 }

@@ -62,7 +62,7 @@ case class InvoiceDocument(
   items: Map[Int, InvoiceItem] = Map.empty,
   totalAmount: BigDecimal = 0
   ) extends EventProcessor[InvoiceEvent, InvoiceDocument] {
-  def applyEvent = _.event match {
+  def applyEvent = _.payload match {
     case InvoiceDraftCreated() => this
     case InvoiceRecipientChanged(recipient) =>
       copy(recipient = recipient)

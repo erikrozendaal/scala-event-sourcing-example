@@ -95,7 +95,7 @@ class SquerylEventStore(serializer: Serializer) extends EventStore {
       } else {
         updateEventStream(attempt)
       }
-      val records = events.map(event => EventStreamRecord(0, event.eventSourceId, event.sequence, write(event.event)))
+      val records = events.map(event => EventStreamRecord(0, event.eventSourceId, event.sequence, write(event.payload)))
       EventStreamRecords.insert(records)
     }
   }

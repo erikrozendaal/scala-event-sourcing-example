@@ -90,7 +90,7 @@ abstract class EventStoreSpec extends org.specs2.mutable.SpecificationWithJUnit 
       val received: mutable.Queue[(Identifier, Any)] = mutable.Queue()
 
       def listener: subject.EventStoreListener = {
-        commit => received += commit.eventSourceId -> commit.event
+        commit => received += commit.eventSourceId -> commit.payload
       }
 
       subject.addListener(listener)
