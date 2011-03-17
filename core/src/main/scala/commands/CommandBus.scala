@@ -11,7 +11,7 @@ class CommandBus(eventStore: EventStore) {
     val handler = handlers.getMostSpecific(command.getClass)
       .getOrElse(throw new IllegalArgumentException("no handler for found command: " + command))
 
-    handler.invokeWithCommand(command).execute match {
+    Behavior.run(handler.invokeWithCommand(command)) match {
       case Reaction(uow, result) =>
         for (source <- uow.eventSources.values) {
           eventStore.commit(Commit(source.id, source.originalRevision, source.changes))
@@ -25,7 +25,7 @@ class CommandBus(eventStore: EventStore) {
     }
   }
 
-  def register[T <: Command](handler: T => Behavior[Any])(implicit m: Manifest[T]) {
+  def register[T <: Command](handler: T => Any)(implicit m: Manifest[T]) {
     registerHandler(CommandHandler[T](handler))
   }
 

@@ -17,7 +17,7 @@ class AggregatesSpec extends org.specs2.mutable.SpecificationWithJUnit {
   }
 
   object ExampleAggregateRoot extends AggregateFactory[ExampleAggregateRoot] {
-    def create(id: Identifier, content: String): Behavior[ExampleAggregateRoot] = created(id, ExampleEvent(content))
+    def create(id: Identifier, content: String): ExampleAggregateRoot = created(id, ExampleEvent(content))
 
     protected[this] def applyEvent = created
 
@@ -30,9 +30,9 @@ class AggregatesSpec extends org.specs2.mutable.SpecificationWithJUnit {
 
     val TestId1 = newIdentifier
 
-    val justCreated = ExampleAggregateRoot.create(TestId1, "hello").execute.result
-    val updated = behavior.pure(justCreated).flatMap(_.update("world")).execute.result
-    val different = ExampleAggregateRoot.create(TestId1, "different?").execute.result
+    val justCreated = Behavior.run(ExampleAggregateRoot.create(TestId1, "hello")).result
+    val updated = Behavior.run(justCreated.update("world")).result
+    val different = Behavior.run(ExampleAggregateRoot.create(TestId1, "different?")).result
   }
 
   "aggregate store" should {
@@ -55,27 +55,28 @@ class AggregatesSpec extends org.specs2.mutable.SpecificationWithJUnit {
 
   "aggregate repository" should {
     "fail when aggregate does not exist" in new Context {
-      repository.get[ExampleAggregateRoot](newIdentifier).execute must throwA[IllegalArgumentException]
+      Behavior.run(repository.get[ExampleAggregateRoot](newIdentifier)) must throwA[RuntimeException]
     }
     "use aggregates store to find initial version" in new Context {
       subject applyEvent Committed(TestId1, 1, ExampleEvent("hello"))
 
-      repository.get[ExampleAggregateRoot](TestId1).execute.result must_== ExampleAggregateRoot(TestId1, "hello")
+      Behavior.run(repository.get[ExampleAggregateRoot](TestId1)).result must_== ExampleAggregateRoot(TestId1, "hello")
     }
     "use tracked event sources to find current version" in new Context {
       subject applyEvent Committed(TestId1, 1, ExampleEvent("hello"))
 
-      val aggregate = repository.get[ExampleAggregateRoot](TestId1)
-        .andThen(repository.get[ExampleAggregateRoot](TestId1))
-        .execute.result
+      val aggregate = Behavior.run({
+        repository.get[ExampleAggregateRoot](TestId1)
+        repository.get[ExampleAggregateRoot](TestId1)
+      }).result
 
       aggregate must_== ExampleAggregateRoot(TestId1, "hello")
     }
     "use tracked event sources to find the updated version" in new Context {
-      val aggregate = ExampleAggregateRoot.create(TestId1, "hello")
-        .flatMap(_.update("world"))
-        .andThen(repository.get[ExampleAggregateRoot](TestId1))
-        .execute.result
+      val aggregate = Behavior.run({
+        ExampleAggregateRoot.create(TestId1, "hello").update("world")
+          repository.get[ExampleAggregateRoot](TestId1)
+      }).result
 
       aggregate must_== ExampleAggregateRoot(TestId1, "world")
     }

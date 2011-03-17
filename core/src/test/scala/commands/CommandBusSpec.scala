@@ -14,7 +14,7 @@ class CommandBusSpec extends org.specs2.mutable.SpecificationWithJUnit {
 
     var handlerInvoked = false
 
-    def testHandler = CommandHandler[ExampleCommand] {command => handlerInvoked = true; behavior.pure()}
+    def testHandler = CommandHandler[ExampleCommand] {command => handlerInvoked = true}
 
     subject.registerHandler(testHandler)
   }
@@ -34,22 +34,12 @@ class CommandBusSpec extends org.specs2.mutable.SpecificationWithJUnit {
 
     "commit accepted unit of work" in new Context {
       subject.register[ExampleCommand] {command =>
-        modifyEventSource(Source, ExampleEvent(command.content))(_ => None) andThen behavior.pure()
+        Behavior.modifyEventSource(Source, ExampleEvent(command.content))(_ => None)
       }
 
       subject.send(ExampleCommand("hello"))
 
       eventStore.load(Source) must contain(Committed(Source, 1, ExampleEvent("hello")))
-    }
-
-    "rollback rejected unit of work" in new Context {
-      subject.register[AnotherCommand] {command =>
-        modifyEventSource(Source, ExampleEvent(command.content))(_ => None) andThen behavior.rollback
-      }
-
-      subject.send(AnotherCommand("hello"))
-
-      eventStore.load(Source) must beEmpty
     }
   }
 }

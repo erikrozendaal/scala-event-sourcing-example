@@ -20,7 +20,7 @@ sealed trait Invoice extends AggregateRoot {
 }
 
 object Invoice extends AggregateFactory[Invoice] {
-  def createDraft(id: Identifier): Behavior[DraftInvoice] = created(id, InvoiceDraftCreated())
+  def createDraft(id: Identifier): DraftInvoice = created(id, InvoiceDraftCreated())
 
   protected[this] def applyEvent = created
 
@@ -34,11 +34,11 @@ case class DraftInvoice(
   items: Map[Int, InvoiceItem] = Map.empty
   ) extends Invoice {
 
-  def changeRecipient(recipient: Option[String]): Behavior[DraftInvoice] = {
+  def changeRecipient(recipient: Option[String]): DraftInvoice = {
     recipientChanged(InvoiceRecipientChanged(recipient.map(_.trim).filter(_.nonEmpty)))
   }
 
-  def addItem(description: String, amount: BigDecimal): Behavior[DraftInvoice] = {
+  def addItem(description: String, amount: BigDecimal): DraftInvoice = {
     val item = InvoiceItem(nextItemId, description, amount)
     itemAdded(InvoiceItemAdded(item, totalAmount + amount))
   }
@@ -85,9 +85,9 @@ class InvoiceSpec extends org.specs2.mutable.SpecificationWithJUnit {
     commands.register[InvoiceCommand] {
       case CreateDraftInvoice(invoiceId) => Invoice.createDraft(invoiceId)
       case ChangeInvoiceRecipient(invoiceId, recipient) =>
-        repository.update(invoiceId) {invoice: DraftInvoice => invoice.changeRecipient(recipient)}
+        repository.get[DraftInvoice](invoiceId).changeRecipient(recipient)
       case AddInvoiceItem(invoiceId, description, price) =>
-        repository.update(invoiceId) {invoice: DraftInvoice => invoice.addItem(description, price)}
+        repository.get[DraftInvoice](invoiceId).addItem(description, price)
     }
   }
 

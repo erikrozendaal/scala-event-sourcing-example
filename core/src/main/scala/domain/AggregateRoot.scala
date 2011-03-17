@@ -8,13 +8,13 @@ trait AggregateEventHandler[-A <: DomainEvent, +B] {
 }
 
 class AggregateRootEventHandler[-A <: DomainEvent, +B](aggregateId: Identifier, callback: Recorded[A] => B) extends AggregateEventHandler[A, B] {
-  def apply(event: A) = modifyEventSource(aggregateId, event)(callback)
+  def apply(event: A): B = Behavior.modifyEventSource(aggregateId, event)(callback)
 
   private[domain] def applyFromHistory(event: Recorded[A]): B = callback(event)
 }
 
 class AggregateFactoryEventHandler[-A <: DomainEvent, +B](callback: Recorded[A] => B) extends AggregateEventHandler[A, B] {
-  def apply(aggregateId: Identifier, event: A) = modifyEventSource(aggregateId, event)(callback)
+  def apply(aggregateId: Identifier, event: A) = Behavior.modifyEventSource(aggregateId, event)(callback)
 
   private[domain] def applyFromHistory(event: Recorded[A]): B = callback(event)
 }
@@ -71,19 +71,11 @@ trait AggregateFactory[AR <: AggregateRoot] extends EventSource[AggregateRoot] {
 }
 
 class AggregateRepository[-AR <: AggregateRoot : NotNothing](aggregates: Aggregates) {
-  def get[T <: AR : NotNothing](id: Identifier): Behavior[T] = Behavior {
-    tracked =>
-      tracked.getEventSource(id) map {
-        result => Reaction(tracked, result.asInstanceOf[T])
-      } getOrElse {
-        aggregates.get(id) map {
-          aggregate =>
-            tracked.trackEventSource(id, aggregate.revision, aggregate.root).copy(result = aggregate.root.asInstanceOf[T])
-        } getOrElse {
-          throw new IllegalArgumentException("aggregate <" + id + "> not found")
-        }
-      }
+  def get[T <: AR : NotNothing](id: Identifier): T = {
+    Behavior.getEventSource(id).map(_.asInstanceOf[T]) getOrElse {
+      val aggregate = aggregates.get(id).getOrElse(error("aggregate <" + id + "> not found"))
+      Behavior.trackEventSource(id, aggregate.revision, aggregate.root)
+      aggregate.root.asInstanceOf[T]
+    }
   }
-
-  def update[A <: AR, B <: AR](id: Identifier)(f: A => Behavior[B]): Behavior[B] = get(id) >>= f
 }

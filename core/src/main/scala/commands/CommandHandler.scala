@@ -4,20 +4,20 @@ package commands
 import behavior._
 
 abstract class CommandHandler[T <: Command, R](implicit m: Manifest[T]) {
-  def apply(command: T): Behavior[R]
+  def apply(command: T): R
   def commandType: Class[_] = m.erasure
   def invokeWithCommand(command: Command) = apply(command.asInstanceOf[T])
 }
 
 object CommandHandler {
   def apply[T <: Command] = new {
-    def apply[R](callback: T => Behavior[R])(implicit m: Manifest[T]) = new CommandHandler[T, R] {
+    def apply[R](callback: T => R)(implicit m: Manifest[T]) = new CommandHandler[T, R] {
       def apply(command: T) = callback(command)
     }
   }
 
   def updateCommandHandler = CommandHandler[Update] {command =>
-    trackEventSource(command.eventSourceId, command.expectedRevision, ())
-      .andThen(modifyEventSource(command.eventSourceId, command.event)(_ => ()))
+    Behavior.trackEventSource(command.eventSourceId, command.expectedRevision, ())
+    Behavior.modifyEventSource(command.eventSourceId, command.event)(_ => ())
   }
 }
