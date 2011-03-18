@@ -13,8 +13,8 @@ object Invoices {
   import Loc._
 
   val menu = Menu(
-    Loc("invoices", "invoices" :: Nil, "Invoices"),
-    Menu(Loc("edit-invoice", "invoices" :: "edit" :: Nil, "Edit invoice", Hidden)))
+    Loc("invoices", "invoices" :: "index" :: Nil, "Invoices"),
+      Menu(Loc("edit-invoice", "invoices" :: "edit" :: Nil, "Edit invoice", Hidden)))
 }
 
 class Invoices(commands: CommandBus, invoiceReport: QueryableReport[InvoiceReport]) extends DispatchSnippet {

@@ -13,7 +13,7 @@ object Products {
   import Loc._
 
   val menu = Menu(
-    Loc("products", "products" :: Nil, "Products", Stateless))
+    Loc("products", "products" :: "index" :: Nil, "Products", Stateless))
 }
 
 class Products extends DispatchSnippet {

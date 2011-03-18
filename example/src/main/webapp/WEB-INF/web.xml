@@ -6,16 +6,6 @@
 
 <web-app>
     <filter>
-        <filter-name>Scalatra</filter-name>
-        <filter-class>example.scalatra.ScalatraProducts</filter-class>
-    </filter>
-
-    <filter-mapping>
-        <filter-name>Scalatra</filter-name>
-        <url-pattern>/s/*</url-pattern>
-    </filter-mapping>
-
-    <filter>
         <filter-name>LiftFilter</filter-name>
         <display-name>Lift Filter</display-name>
         <description>The Filter that intercepts lift calls</description>

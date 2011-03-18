@@ -3,7 +3,6 @@ import sbt._
 class Project(info: ProjectInfo) extends ParentProject(info) {
   val LiftVersion = "2.2"
   val scalazVersion = "5.1-SNAPSHOT"
-  val scalatraVersion = "2.0.0.M3"
   val Slf4jVersion = "1.6.1"
 
   val snapshots = "snapshots" at "http://scala-tools.org/repo-snapshots"
@@ -33,13 +32,11 @@ class Project(info: ProjectInfo) extends ParentProject(info) {
     val slf4j_simple = "org.slf4j" % "slf4j-simple" % Slf4jVersion % "test" withSources ()
   }
 
-  class ExampleWebProject(info: ProjectInfo) extends DefaultWebProject(info) with org.fusesource.scalate.sbt.PrecompilerWebProject {
+  class ExampleWebProject(info: ProjectInfo) extends DefaultWebProject(info) {
     override def scanDirectories = Nil
 
     override def libraryDependencies = Set(
       "net.liftweb" %% "lift-webkit" % LiftVersion % "compile->default" withSources (),
-      "org.scalatra" %% "scalatra" % scalatraVersion % "compile" withSources (),
-      "org.scalatra" %% "scalatra-test" % scalatraVersion % "test" withSources (),
       "org.mortbay.jetty" % "jetty" % "6.1.25" % "test->default",
       "javax.servlet" % "servlet-api" % "2.5" % "provided",
       //"org.eclipse.jetty" % "jetty-webapp" % "7.2.2.v20101205" % "test->default",
@@ -49,5 +46,4 @@ class Project(info: ProjectInfo) extends ParentProject(info) {
       "ch.qos.logback" % "logback-classic" % "0.9.26"
     ) ++ super.libraryDependencies
   }
-
 }
