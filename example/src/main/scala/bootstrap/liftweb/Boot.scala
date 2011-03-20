@@ -61,6 +61,7 @@ class Boot extends Logging {
 
   LiftRules.snippetDispatch.prepend(Map(
     "Invoices" -> new Invoices(commands, invoiceReport),
+    "EditInvoice" -> new EditInvoiceSnippet(commands),
     "NewsItems" -> new NewsItems(commands, newsItemReport),
     "Products" -> new Products
   ))

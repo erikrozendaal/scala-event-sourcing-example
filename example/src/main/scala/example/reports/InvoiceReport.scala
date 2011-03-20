@@ -16,6 +16,8 @@ case class InvoiceReport(
 
   def mostRecent(n: Int): List[InvoiceDocument] = recent.take(n).map(invoices)
 
+  def get(id: Identifier) = invoices.get(id)
+
   def applyEvent = committed => {
     val invoiceId = committed.eventSourceId
     committed.payload match {

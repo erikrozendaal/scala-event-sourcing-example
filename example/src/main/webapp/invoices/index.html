@@ -11,10 +11,12 @@
     <div class="lift:Invoices.list">
         <table>
             <thead>
-                <th>Id</th><th>Recipient</th><th>Actions</th>
+                <th>Nummer</th><th>Ontvanger</th><th>Totaal</th><th>Acties</th>
             </thead>
             <tbody>
-                <tr class="invoice">an invoice</tr>
+                <tr class="invoice">
+                    <td class="number">123</td><td class="recipient">Deler</td><td class="totalAmount">€ 23.95</td><td class="actions">edit</td>
+                </tr>
             </tbody>
         </table>
     </div>
@@ -22,7 +24,7 @@
     <div class="lift:Invoices.createDraft?form=post">
         <h3>Create a new draft invoice</h3>
 
-        <p><input type="submit" value="Add"/></p>
+        <p><input type="submit" value="Create draft invoice"/></p>
     </div>
 </div>
 </body>

@@ -4,57 +4,74 @@ import example.commands._
 import com.zilverline.es2._, commands.CommandBus, reports.QueryableReport
 import net.liftweb.util._
 import Helpers._
-import example.reports.InvoiceReport
 import java.util.UUID
 import net.liftweb.sitemap._
-import net.liftweb.http._
+import net.liftweb.http._, js.JsCmds.FocusOnLoad
+import example.reports.{InvoiceDocument, InvoiceReport}
+import example.app.Application
+import xml.NodeSeq
 
 object Invoices {
-  import Loc._
 
-  val menu = Menu(
-    Loc("invoices", "invoices" :: "index" :: Nil, "Invoices"),
-      Menu(Loc("edit-invoice", "invoices" :: "edit" :: Nil, "Edit invoice", Hidden)))
+  lazy val invoiceReport = Application.invoiceReport
+
+  val editInvoiceMenu = Menu.param[InvoiceDocument]("edit-invoice", "Edit",
+    id => invoiceReport.query(_.get(UUID.fromString(id))),
+    _.invoiceId.toString) / "invoices" / * / "edit" >> Loc.Hidden
+
+  lazy val editInvoiceLoc = editInvoiceMenu.toLoc
+
+  val menu = Menu("list-invoices", "Invoices") / "invoices" / "index" >> Loc.Stateless submenus (editInvoiceMenu)
+
+  val listInvoicesLink = menu.loc.createDefaultLink.get.text
 }
 
 class Invoices(commands: CommandBus, invoiceReport: QueryableReport[InvoiceReport]) extends DispatchSnippet {
   def dispatch: DispatchIt = {
     case "list" => list
     case "createDraft" => createDraft
-    case "editRecipient" => editRecipient
   }
 
-  private def list = ".invoice" #> invoiceReport.query(_.mostRecent(S.param("n").map(_.toInt).openOr(10))).map(invoice =>
-    <tr><td>{invoice.invoiceId}</td><td>{invoice.recipient.getOrElse("")}</td><td><a href={"/invoices/edit?invoice=" + invoice.invoiceId}>edit</a></td></tr>)
+  private def list = {
+    val count = S.param("n").flatMap(asInt).openOr(10)
+    val invoices = invoiceReport.query(_.mostRecent(count))
 
-  private def createDraft = {
-    def doSubmit() {
+    ".invoice *" #> invoices.map(invoice =>
+      ".number *" #> "N.n.b." &
+        ".recipient *" #> invoice.recipient.getOrElse("") &
+        ".totalAmount *" #> "€ %.2f".format(invoice.totalAmount) &
+        ".actions *" #> <a href={Invoices.editInvoiceLoc.calcHref(invoice)}>edit</a>)
+  }
+
+  private def createDraft: NodeSeq => NodeSeq = {
+    if (S.post_?) {
       val invoiceId = newIdentifier
       commands.send(CreateDraftInvoice(invoiceId))
       S.notice("Invoice created.")
-      S.redirectTo("/invoices/edit?invoice=" + invoiceId)
+      S.redirectTo(Invoices.editInvoiceLoc.calcHref(InvoiceDocument(invoiceId)))
     }
 
-    "type=submit" #> SHtml.submit("Create draft invoice", doSubmit)
+    identity
   }
+}
 
-  private def editRecipient = {
-    val uri = S.uriAndQueryString openOr "/"
-    val invoiceId = UUID.fromString(S.param("invoice").open_!)
-    var recipient = ""
+class EditInvoiceSnippet(commands: CommandBus) extends SimpleStateful {
+  def render = {
+    val invoice = Invoices.editInvoiceLoc.currentValue.open_!
+    var recipient = invoice.recipient.getOrElse("")
 
     def doSubmit() {
       recipient = recipient.trim
       if (recipient.isEmpty) {
         S.error("recipient cannot be empty")
       } else {
-        commands.send(ChangeInvoiceRecipient(invoiceId, recipient))
+        commands.send(ChangeInvoiceRecipient(invoice.invoiceId, recipient))
         S.notice("Recipient changed to '" + recipient + "'.")
+        S.redirectTo(Invoices.listInvoicesLink)
       }
-      S.redirectTo(uri)
     }
 
-    "name=recipient" #> SHtml.onSubmit(recipient = _) &
-      "type=submit" #> SHtml.onSubmitUnit(doSubmit)
+    "@recipient" #> FocusOnLoad(SHtml.text(recipient, recipient = _)) &
+      ":submit" #> SHtml.onSubmitUnit(doSubmit)
   }
 }
