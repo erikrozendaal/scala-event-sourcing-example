@@ -40,7 +40,8 @@ class SquerylEventStore(serializer: Serializer) extends EventStore {
   def commit(attempt: Commit) {
     if (attempt.events.isEmpty) return
 
-    this synchronized { // TODO only lock the event source being committed
+    this synchronized {
+      // TODO only lock the event source being committed
       val committed = makeCommittedEvents(attempt)
       insertEvents(attempt, committed)
       dispatchEvents(committed)
@@ -65,7 +66,12 @@ class SquerylEventStore(serializer: Serializer) extends EventStore {
 
   private def write = serializer.serialize _
 
-  private def read = serializer.deserialize _
+  private def read = (s: String) =>
+    try {
+      serializer.deserialize(s)
+    } catch {
+      case e => println("failed to deserialize " + s); throw e
+    }
 
   private def createEventStream(attempt: Commit) {
     try {

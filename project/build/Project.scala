@@ -1,7 +1,7 @@
 import sbt._
 
 class Project(info: ProjectInfo) extends ParentProject(info) {
-  val LiftVersion = "2.2"
+  val LiftVersion = "2.3-RC3"
   val scalazVersion = "5.1-SNAPSHOT"
   val Slf4jVersion = "1.6.1"
 
@@ -35,8 +35,11 @@ class Project(info: ProjectInfo) extends ParentProject(info) {
   class ExampleWebProject(info: ProjectInfo) extends DefaultWebProject(info) {
     override def scanDirectories = Nil
 
+    def specs2Framework = new TestFramework("org.specs2.runner.SpecsFramework")
+    override def testFrameworks = super.testFrameworks ++ Seq(specs2Framework)
+
     override def libraryDependencies = Set(
-      "net.liftweb" %% "lift-webkit" % LiftVersion % "compile->default" withSources (),
+      "net.liftweb" %% "lift-webkit" % LiftVersion withSources (),
       "org.mortbay.jetty" % "jetty" % "6.1.25" % "test->default",
       "javax.servlet" % "servlet-api" % "2.5" % "provided",
       //"org.eclipse.jetty" % "jetty-webapp" % "7.2.2.v20101205" % "test->default",

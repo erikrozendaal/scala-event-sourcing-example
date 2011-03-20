@@ -8,16 +8,16 @@
 <body class="lift:content_id=main">
 <div id="main" class="lift:surround?with=default;at=content">
 
-    <div class="lift:NewsItems.list">
-        <ol>
+    <div class="lift:NewsItems">
+        <ol id="newsitems">
             <li class="newsitem">a news item</li>
         </ol>
-    </div>
 
-    <div class="lift:NewsItems.add?form=post">
         <h3>Add a news item</h3>
 
-        <p><label>Content: <input name="content"/></label> <input type="submit" value="Add"/></p>
+        <form class="lift:form.ajax">
+            <p><label>Content: <input name="content"/></label> <input type="submit" value="Add"/></p>
+        </form>
     </div>
 </div>
 </body>

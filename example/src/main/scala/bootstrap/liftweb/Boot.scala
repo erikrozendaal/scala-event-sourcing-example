@@ -5,7 +5,7 @@ import util._
 import Helpers._
 
 import common._
-import http._
+import http._, js._, js.jquery._
 import sitemap._
 import org.squeryl.PrimitiveTypeMode._
 import com.zilverline.es2.util.Logging
@@ -47,6 +47,8 @@ class Boot extends Logging {
 
     // Force the request to be UTF-8
     LiftRules.early.append(_.setCharacterEncoding("UTF-8"))
+
+    LiftRules.noticesAutoFadeOut.default.set((noticeType: NoticeType.Value) => Full((1 seconds, 2 seconds)))
 
     transaction {
       Product.deleteAll

@@ -18,5 +18,5 @@ class ReflectionTypeHints extends TypeHints {
 
 class JsonSerializer(implicit formats: Formats)  extends Serializer {
   def serialize(event: DomainEvent): String = write(event)
-  def deserialize(serialized: String): DomainEvent = read[DomainEvent](serialized)
+  def deserialize(serialized: String): DomainEvent = read[ScalaObject](serialized) // FIXME should really be DomainEvent
 }
