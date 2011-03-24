@@ -14,6 +14,8 @@ object Products {
 
   val menu = Menu(
     Loc("products", "products" :: "index" :: Nil, "Products", Stateless))
+
+  def products = transaction { model.Product.findAll.toIndexedSeq }
 }
 
 class Products extends DispatchSnippet {
@@ -21,18 +23,16 @@ class Products extends DispatchSnippet {
     case "list" => list
   }
 
-  private def list = transaction {
-    ".products" #> model.Product.findAll.map(p =>
-      <tr>
-        <td>
-          {p.title}
-        </td> <td>
-        {p.description}
-      </td> <td>
-        {p.imageUrl.getOrElse("")}
-      </td> <td>
-        {p.price}
-      </td> <td></td> <td></td> <td></td>
-      </tr>)
+  private def list = {
+    ".products" #> Products.products.map(p =>
+<tr>
+<td>{p.title}</td>
+<td>{p.description}</td>
+<td>{p.imageUrl.getOrElse("")}</td>
+<td>{p.price}</td>
+<td><a href={"/products/" + p.id}>show</a></td>
+<td><a href={"/products/" + p.id + "/edit"}>edit</a></td>
+<td><a href={"/products/" + p.id + "/delete"} data-method="DELETE" data-confirm="Are you sure?">destroy</a></td>
+</tr>)
   }
 }

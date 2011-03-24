@@ -48,11 +48,11 @@ class Boot extends Logging {
     // Force the request to be UTF-8
     LiftRules.early.append(_.setCharacterEncoding("UTF-8"))
 
-    LiftRules.noticesAutoFadeOut.default.set((noticeType: NoticeType.Value) => Full((1 seconds, 2 seconds)))
+//    LiftRules.noticesAutoFadeOut.default.set((noticeType: NoticeType.Value) => Full((1 seconds, 2 seconds)))
 
     transaction {
       Product.deleteAll
-      Product.insertTestData(36) // 0 -> 2000, 1 -> 2300, 13 -> 3300, 36 -> 9622, 71 -> 17000, 146 -> 33000
+      Product.insertTestData(10) // 0 -> 2000, 1 -> 2300, 13 -> 3300, 36 -> 9622, 71 -> 17000, 146 -> 33000
     }
     Application.eventStore.replayAllEvents
   }
