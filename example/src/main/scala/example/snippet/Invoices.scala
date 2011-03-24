@@ -36,18 +36,20 @@ class Invoices(commands: CommandBus, invoiceReport: QueryableReport[InvoiceRepor
     val count = S.param("n").flatMap(asInt).openOr(10)
     val invoices = invoiceReport.query(_.mostRecent(count))
 
-    ".invoice *" #> invoices.map(invoice =>
-      ".number *" #> "N.n.b." &
-        ".recipient *" #> invoice.recipient.getOrElse("") &
-        ".totalAmount *" #> "€ %.2f".format(invoice.totalAmount) &
-        ".actions *" #> <a href={Invoices.editInvoiceLoc.calcHref(invoice)}>edit</a>)
+    ".invoice *" #> invoices.map {
+      invoice =>
+        ".number *" #> "unassigned" &
+          ".recipient *" #> invoice.recipient.getOrElse("") &
+          ".totalAmount *" #> "€ %.2f".format(invoice.totalAmount) &
+          ".actions *" #> <a href={Invoices.editInvoiceLoc.calcHref(invoice)}>edit</a>
+    }
   }
 
   private def createDraft: NodeSeq => NodeSeq = {
     if (S.post_?) {
       val invoiceId = newIdentifier
       commands.send(CreateDraftInvoice(invoiceId))
-      S.notice("Invoice created.")
+      S.notice("Draft invoice created.")
       S.redirectTo(Invoices.editInvoiceLoc.calcHref(InvoiceDocument(invoiceId)))
     }
 
@@ -63,7 +65,7 @@ class EditInvoiceSnippet(commands: CommandBus) extends SimpleStateful {
     def doSubmit() {
       recipient = recipient.trim
       if (recipient.isEmpty) {
-        S.error("recipient cannot be empty")
+        S.error("The recipient must be specified")
       } else {
         commands.send(ChangeInvoiceRecipient(invoice.invoiceId, recipient))
         S.notice("Recipient changed to '" + recipient + "'.")
