@@ -18,7 +18,7 @@ trait EventStore {
     synchronized {listeners = listeners :+ callback}
   }
 
-  def replayAllEvents {
+  def replayAllEvents() {
   }
 
   protected[this] def makeCommittedEvents(commit: Commit) = {
@@ -44,7 +44,7 @@ trait LoggingEventStore extends EventStore with Logging {
     }
   }
 
-  abstract override def replayAllEvents {
+  abstract override def replayAllEvents() {
     profile("replayed all events") {
       super.replayAllEvents
     }

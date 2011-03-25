@@ -16,7 +16,7 @@ object Invoices {
   lazy val invoiceReport = Application.invoiceReport
 
   val editInvoiceMenu = Menu.param[InvoiceDocument]("edit-invoice", "Edit",
-    id => invoiceReport.query(_.get(UUID.fromString(id))),
+    id => invoiceReport.query(_.get(Identifier.fromString(id))),
     _.invoiceId.toString) / "invoices" / * / "edit" >> Loc.Hidden
 
   lazy val editInvoiceLoc = editInvoiceMenu.toLoc

@@ -54,7 +54,8 @@ class Boot extends Logging {
       Product.deleteAll
       Product.insertTestData(10) // 0 -> 2000, 1 -> 2300, 13 -> 3300, 36 -> 9622, 71 -> 17000, 146 -> 33000
     }
-    Application.eventStore.replayAllEvents
+    Application.eventStore.replayAllEvents()
+    System.gc()
   }
 
   import Application._

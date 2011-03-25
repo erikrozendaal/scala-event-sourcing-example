@@ -1,7 +1,6 @@
 package com.zilverline.es2
 package eventstore
 
-import java.util.UUID
 import org.squeryl._
 import org.squeryl.PrimitiveTypeMode._
 
@@ -33,7 +32,7 @@ class SquerylEventStore(serializer: Serializer) extends EventStore {
 
   import SquerylEventStore._
 
-  private implicit def stringToIdentifier(s: String): Identifier = UUID.fromString(s)
+  private implicit def stringToIdentifier(s: String): Identifier = Identifier.fromString(s)
 
   private implicit def identifierToString(identifier: Identifier): String = identifier.toString
 
@@ -56,7 +55,7 @@ class SquerylEventStore(serializer: Serializer) extends EventStore {
     records.map(record => Committed(record.source, record.sequence, read(record.event))).toSeq
   }
 
-  override def replayAllEvents {
+  override def replayAllEvents() {
     transaction {
       val records = from(EventStreamRecords)(r => select(r).orderBy(r.id asc))
       val events = records.toStream.map(record => Committed(record.source, record.sequence, read(record.event)))
