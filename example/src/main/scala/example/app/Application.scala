@@ -43,17 +43,19 @@ object Application {
     result
   }
 
-  val jdbcUrl = "jdbc:mysql://localhost:3306/es2"
-  val jdbcDriver = "com.mysql.jdbc.Driver"
+  val jdbcUrl = Props.get("jdbc.url", "jdbc:mysql://localhost:3306/es2_dev")
+  val jdbcDriver = Props.get("jdbc.driver", "com.mysql.jdbc.Driver")
+  val jdbcUser = Props.get("jdbc.user", "root")
+  val jdbcPassword = Props.get("jdbc.password", "")
 
   Class.forName(jdbcDriver)
 
   val c3p0 = new ComboPooledDataSource
   c3p0.setDriverClass(jdbcDriver)
   c3p0.setJdbcUrl(jdbcUrl)
-  c3p0.setUser("root")
-  c3p0.setPassword("")
-  c3p0.setInitialPoolSize(100)
+  c3p0.setUser(jdbcUser)
+  c3p0.setPassword(jdbcPassword)
+  c3p0.setInitialPoolSize(1)
   c3p0.setMaxPoolSize(100)
 
   SessionFactory.concreteFactory = Some {
