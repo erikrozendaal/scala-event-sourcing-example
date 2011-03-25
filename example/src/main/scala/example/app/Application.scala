@@ -4,18 +4,16 @@ import org.squeryl.adapters.{MySQLAdapter, H2Adapter}
 import com.mchange.v2.c3p0.ComboPooledDataSource
 import org.squeryl.{Session, SessionFactory}
 import org.squeryl.PrimitiveTypeMode._
-import net.liftweb.json.Serialization
-import com.zilverline.es2.commands._
-import com.zilverline.es2.domain._
-import com.zilverline.es2.reports._
-import com.zilverline.es2.eventstore._
+import com.zilverline.es2._, commands._, domain._, eventstore._, reports._
 import example.commands._
 import example.reports._
 import example.domain._
 import example.model._
+import net.liftweb.json.{FullTypeHints, Serialization}
+import net.liftweb.util.Props
 
 object Application {
-  val eventSerializer = new JsonSerializer()(Serialization.formats(new ReflectionTypeHints))
+  val eventSerializer = new JsonSerializer()(Serialization.formats(new FullTypeHints(classOf[DomainEvent] :: Nil)))
   val aggregates = new Aggregates(Invoice)
   val repository = new AggregateRepository[Invoice](aggregates)
   val reports = {

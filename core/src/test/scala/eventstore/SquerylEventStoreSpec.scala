@@ -35,7 +35,7 @@ class SquerylEventStoreSpec extends EventStoreSpec {
 
   TestDatabase.initialize
 
-  def serializer = new JsonSerializer()(Serialization.formats(new ReflectionTypeHints))
+  def serializer = new JsonSerializer()(Serialization.formats(new FullTypeHints(classOf[DomainEvent] :: Nil)))
   def makeEmptyEventStore = {
     TestDatabase.clear
     new SquerylEventStore(serializer)
