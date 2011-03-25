@@ -1,7 +1,7 @@
 import sbt._
 
 class Project(info: ProjectInfo) extends ParentProject(info) {
-  val LiftVersion = "2.3-RC3"
+  val LiftVersion = "2.3-RC4"
   val scalazVersion = "5.1-SNAPSHOT"
   val Slf4jVersion = "1.6.1"
 
