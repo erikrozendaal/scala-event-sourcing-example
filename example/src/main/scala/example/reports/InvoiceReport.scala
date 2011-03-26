@@ -3,6 +3,7 @@ package example.reports
 import com.zilverline.es2._
 import com.zilverline.es2.reports.Report
 import example.events._
+import collection.immutable.SortedMap
 
 case class InvoiceDocument(
   invoiceId: Identifier,
@@ -11,7 +12,7 @@ case class InvoiceDocument(
   totalAmount: BigDecimal = 0)
 
 case class InvoiceReport(
-  private val invoices: Map[Identifier, InvoiceDocument] = Map.empty,
+  private val invoices: SortedMap[Identifier, InvoiceDocument] = SortedMap.empty,
   private val recent: List[Identifier] = Nil) extends Report[InvoiceEvent] {
 
   def mostRecent(n: Int): List[InvoiceDocument] = recent.take(n).map(invoices)
