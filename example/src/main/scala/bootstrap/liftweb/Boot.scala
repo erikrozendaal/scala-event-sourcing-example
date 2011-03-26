@@ -11,7 +11,6 @@ import org.squeryl.PrimitiveTypeMode._
 import com.zilverline.es2.util.Logging
 import example.app._
 import example.snippet._
-import example.model.Product
 
 /**
  * A class that's instantiated early and run.  It allows the application
@@ -25,8 +24,7 @@ class Boot extends Logging {
     // Build SiteMap
     val entries = List(
       Menu.i("News Items") / "index", // the simple way to declare a menu
-      example.snippet.Invoices.menu,
-      example.snippet.Products.menu)
+      example.snippet.Invoices.menu)
 
       // more complex because this menu allows anything in the
       // /static path to be visible
@@ -50,10 +48,6 @@ class Boot extends Logging {
 
 //    LiftRules.noticesAutoFadeOut.default.set((noticeType: NoticeType.Value) => Full((1 seconds, 2 seconds)))
 
-    transaction {
-      Product.deleteAll
-      Product.insertTestData(10) // 0 -> 2000, 1 -> 2300, 13 -> 3300, 36 -> 9622, 71 -> 17000, 146 -> 33000
-    }
     Application.eventStore.replayAllEvents()
     System.gc()
   }
@@ -64,6 +58,5 @@ class Boot extends Logging {
     "Invoices" -> new Invoices(commands, invoiceReport),
     "EditInvoice" -> new EditInvoiceSnippet(commands),
     "NewsItems" -> new NewsItems(commands, newsItemReport),
-    "Products" -> new Products
   ))
 }
