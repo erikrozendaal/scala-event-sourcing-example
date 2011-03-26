@@ -58,16 +58,17 @@ object Application {
   c3p0.setInitialPoolSize(1)
   c3p0.setMaxPoolSize(100)
 
+  val databaseAdapter = new MySQLAdapter
+
   SessionFactory.concreteFactory = Some {
     () =>
-      val result = Session.create(c3p0.getConnection, new MySQLAdapter)
+      val result = Session.create(c3p0.getConnection, databaseAdapter)
       //result.setLogger(logger.debug _)
       result
   }
 
   try {
     transaction {
-      Product.create
       SquerylEventStore.create
     }
   } catch {
