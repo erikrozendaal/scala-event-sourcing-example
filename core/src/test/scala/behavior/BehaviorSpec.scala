@@ -3,7 +3,8 @@ package behavior
 
 import eventstore._
 import org.specs2.execute.Result
-import org.scalacheck._, Arbitrary.arbitrary, Prop._
+import EventGenerators._
+import org.scalacheck.Prop._
 
 class BehaviorSpec extends org.specs2.mutable.SpecificationWithJUnit with org.specs2.ScalaCheck {
 
@@ -14,7 +15,6 @@ class BehaviorSpec extends org.specs2.mutable.SpecificationWithJUnit with org.sp
   }
 
   implicit val scalaCheckParameters = set(minTestsOk -> 10)
-  implicit val arbitraryExampleEvent = Arbitrary(for (content <- arbitrary[String]) yield ExampleEvent(content))
 
   case class behavior() {
     val EventSourceId = newIdentifier

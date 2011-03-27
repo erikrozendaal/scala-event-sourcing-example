@@ -8,8 +8,8 @@ case class EventStream(source: String, revision: Long) {
   def this() = this ("", 0L)
 }
 
-case class EventStreamRecord(id: Long, source: String, sequence: Long, event: String) extends KeyedEntity[Long] {
-  def this() = this (0, "", 0L, "")
+case class EventStreamRecord(id: Long, source: String, sequence: Long, event: Array[Byte]) extends KeyedEntity[Long] {
+  def this() = this (0, "", 0L, Array.empty)
 }
 
 object SquerylEventStore extends Schema {
@@ -23,7 +23,6 @@ object SquerylEventStore extends Schema {
   on(EventStreamRecords) {t =>
     declare(
       t.source is (dbType("varchar(36)")),
-      t.event is (dbType("text")),
       columns(t.source, t.sequence) are (unique))
   }
 }
@@ -65,12 +64,11 @@ class SquerylEventStore(serializer: Serializer) extends EventStore {
 
   private def write = serializer.serialize _
 
-  private def read = (s: String) =>
-    try {
-      serializer.deserialize(s)
-    } catch {
-      case e => println("failed to deserialize " + s); throw e
-    }
+  private def read(s: Array[Byte]) = try {
+    serializer.deserialize(s)
+  } catch {
+    case e => println("failed to deserialize " + s); throw e
+  }
 
   private def createEventStream(attempt: Commit) {
     try {
