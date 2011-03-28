@@ -28,7 +28,7 @@ class BehaviorSpec extends org.specs2.mutable.SpecificationWithJUnit with org.sp
       }
     }
 
-    def tracksSingleChange: Result = forAll {event: ExampleEvent =>
+    def tracksSingleChange: Result = forAll {event: TestEvent =>
       val result = Behavior.run(Behavior.modifyEventSource(EventSourceId, event) {_.payload.content})
         .tracked.eventSources(EventSourceId)
 
@@ -37,7 +37,7 @@ class BehaviorSpec extends org.specs2.mutable.SpecificationWithJUnit with org.sp
         result.currentValue == event.content
     }
 
-    def tracksMultipleChangesToSingleEventSource: Result = forAll {events: List[ExampleEvent] =>
+    def tracksMultipleChangesToSingleEventSource: Result = forAll {events: List[TestEvent] =>
       events.nonEmpty ==> {
         val result = Behavior.run(events foreach { event =>
           Behavior.modifyEventSource(EventSourceId, event)(_.payload.content)

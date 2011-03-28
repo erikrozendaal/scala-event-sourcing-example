@@ -29,7 +29,7 @@ object EventGenerators {
 
   val unicodeString = Gen.listOf(unicodeCharacter).map(_.mkString)
 
-  implicit val arbitraryExampleEvent = Arbitrary(for (content <- arbitrary[String]) yield ExampleEvent(content))
-  implicit val arbitraryAnotherEvent = Arbitrary(for (content <- arbitrary[String]) yield AnotherEvent(content))
-  implicit val arbitraryTestEvent: Arbitrary[TestEvent] = Arbitrary(Gen.oneOf(arbitraryExampleEvent.arbitrary, arbitraryAnotherEvent.arbitrary))
+  implicit val arbitraryExampleEvent = Arbitrary(unicodeString.map(ExampleEvent))
+  implicit val arbitraryAnotherEvent = Arbitrary(unicodeString.map(AnotherEvent))
+  implicit val arbitraryTestEvent: Arbitrary[TestEvent] = Arbitrary(Gen.oneOf(arbitrary[ExampleEvent], arbitrary[AnotherEvent]))
 }

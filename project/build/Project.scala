@@ -14,6 +14,7 @@ class Project(info: ProjectInfo) extends ParentProject(info) {
   class CoreProject(info: ProjectInfo) extends DefaultProject(info) with growl.GrowlingTests {
     override def compileOptions = super.compileOptions ++ Seq(Unchecked)
 
+    val scala_stm = "org.scala-tools" %% "scala-stm" % "0.3"
     val squeryl = "org.squeryl" %% "squeryl" % "0.9.4-RC6" withSources ()
     val scalaz = "com.googlecode.scalaz" %% "scalaz-core" % scalazVersion withSources ()
     val liftweb_json = "net.liftweb" %% "lift-json" % LiftVersion withSources ()
