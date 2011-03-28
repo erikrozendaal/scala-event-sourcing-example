@@ -14,12 +14,12 @@ class JsonSerializerSpec extends org.specs2.mutable.SpecificationWithJUnit with 
   }
 
   implicit val scalaCheckParameters = set(minTestsOk -> 10)
-  implicit val formats = Serialization.formats(FullTypeHints(classOf[DomainEvent] :: Nil))
 
   case class serializer() {
+    implicit val formats = Serialization.formats(FullTypeHints(classOf[DomainEvent] :: Nil))
     val subject = new JsonSerializer
 
-    def test = forAll {event: ExampleEvent =>
+    def test = forAll {event: TestEvent =>
       subject.encoder.canEncode(event.content) ==> {
         event == subject.deserialize(subject.serialize(event))
       }
