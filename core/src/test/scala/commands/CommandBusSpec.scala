@@ -2,11 +2,16 @@ package com.zilverline.es2
 package commands
 
 import behavior._
-import org.specs2.execute.Success
 
 class CommandBusSpec extends org.specs2.mutable.SpecificationWithJUnit {
 
-  trait Context extends Success {
+  "command bus" should {
+    "invoke handler based on command type" in context().invokeHandler
+    "fail when no handler found for command" in context().failWithoutHandler
+    "commit accepted unit of work" in context().commitEvents
+  }
+
+  case class context() {
     val Source = newIdentifier
 
     val eventStore = new eventstore.MemoryEventStore
@@ -17,22 +22,20 @@ class CommandBusSpec extends org.specs2.mutable.SpecificationWithJUnit {
     def testHandler = CommandHandler[ExampleCommand] {command => handlerInvoked = true}
 
     subject.registerHandler(testHandler)
-  }
 
-  "command bus" should {
-    "invoke handler based on command type" in new Context {
+    def invokeHandler = {
       subject.send(ExampleCommand("example"))
 
       handlerInvoked must beTrue
     }
 
-    "fail when no handler found for command" in new Context {
+    def failWithoutHandler = {
       subject.send(AnotherCommand("hello")) must throwA[IllegalArgumentException]
 
       handlerInvoked must beFalse
     }
 
-    "commit accepted unit of work" in new Context {
+    def commitEvents = {
       subject.register[ExampleCommand] {command =>
         Behavior.modifyEventSource(Source, ExampleEvent(command.content))(_ => None)
       }
