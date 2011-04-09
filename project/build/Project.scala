@@ -1,8 +1,8 @@
 import sbt._
 
 class Project(info: ProjectInfo) extends ParentProject(info) {
-  val LiftVersion = "2.3-RC4"
-  val scalazVersion = "5.1-SNAPSHOT"
+  val LiftVersion = "2.3"
+  val ScalazVersion = "6.0-SNAPSHOT"
   val Slf4jVersion = "1.6.1"
 
   val snapshots = "snapshots" at "http://scala-tools.org/repo-snapshots"
@@ -16,12 +16,12 @@ class Project(info: ProjectInfo) extends ParentProject(info) {
 
     val scala_stm = "org.scala-tools" %% "scala-stm" % "0.3"
     val squeryl = "org.squeryl" %% "squeryl" % "0.9.4-RC6" withSources ()
-    val scalaz = "com.googlecode.scalaz" %% "scalaz-core" % scalazVersion withSources ()
+    val scalaz = "org.scalaz" %% "scalaz-core" % ScalazVersion withSources ()
     val liftweb_json = "net.liftweb" %% "lift-json" % LiftVersion withSources ()
     val slf4j_api = "org.slf4j" % "slf4j-api" % Slf4jVersion withSources ()
 
     val junit = "junit" % "junit" % "4.8.2" % "test" withSources ()
-    val specs2 = "org.specs2" %% "specs2" % "1.0.1"
+    val specs2 = "org.specs2" %% "specs2" % "1.1" withSources ()
 
     def specs2Framework = new TestFramework("org.specs2.runner.SpecsFramework")
     override def testFrameworks = super.testFrameworks ++ Seq(specs2Framework)

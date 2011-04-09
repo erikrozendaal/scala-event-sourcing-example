@@ -6,9 +6,8 @@ import org.squeryl.{Session, SessionFactory}
 import org.squeryl.PrimitiveTypeMode._
 import com.zilverline.es2._, commands._, domain._, eventstore._, reports._
 import example.commands._
-import example.reports._
 import example.domain._
-import example.model._
+import example.reports._
 import net.liftweb.json.{FullTypeHints, Serialization}
 import net.liftweb.util.Props
 
