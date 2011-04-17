@@ -7,8 +7,12 @@ case class Aggregate(id: Identifier, revision: Revision, root: AggregateRoot)
 
 class Aggregates(factories: AggregateFactory[_]*) extends EventProcessor[DomainEvent, Unit] {
 
-  def get(aggregate: Identifier): Option[Aggregate] = {
-    aggregates synchronized {aggregates.get(aggregate)}
+  def apply(aggregate: Identifier): Aggregate = aggregates synchronized {
+    aggregates.getOrElse(aggregate, error("unknown aggregate <" + aggregate + ">"))
+  }
+
+  def get(aggregate: Identifier): Option[Aggregate] = aggregates synchronized {
+    aggregates.get(aggregate)
   }
 
   def applyEvent = committedEvent => {

@@ -1,7 +1,7 @@
 package com.zilverline.es2
 package commands
 
-import behavior._
+import behavior._, Behavior._
 
 class CommandBusSpec extends org.specs2.mutable.SpecificationWithJUnit {
 
@@ -19,7 +19,7 @@ class CommandBusSpec extends org.specs2.mutable.SpecificationWithJUnit {
 
     var handlerInvoked = false
 
-    def testHandler = CommandHandler[ExampleCommand] {command => handlerInvoked = true}
+    def testHandler = CommandHandler[ExampleCommand] {command => handlerInvoked = true; pure()}
 
     subject.registerHandler(testHandler)
 

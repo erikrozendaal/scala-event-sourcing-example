@@ -1,7 +1,7 @@
 package com.zilverline.es2
 package behavior
 
-import scala.util.DynamicVariable
+import Behavior._
 
 private[behavior] case class TrackedEventSource[+A](
   id: Identifier,
@@ -18,11 +18,11 @@ private[behavior] case class TrackedEventSource[+A](
 }
 
 private[behavior] case class TrackedEventSources(eventSources: Map[Identifier, TrackedEventSource[Any]] = Map.empty) {
-  def getValue(eventSourceId: Identifier): Option[Any] = eventSources.get(eventSourceId).map(_.currentValue)
+  def getCurrentValue(eventSourceId: Identifier): Option[Any] = eventSources.get(eventSourceId).map(_.currentValue)
 
-  def track(eventSourceId: Identifier, originalRevision: Revision, value: Any): TrackedEventSources = {
+  def track(eventSourceId: Identifier, revision: Revision, value: Any): TrackedEventSources = {
     require(!eventSources.contains(eventSourceId), "already tracking " + eventSourceId)
-    copy(eventSources + (eventSourceId -> TrackedEventSource(eventSourceId, originalRevision, value)))
+    copy(eventSources + (eventSourceId -> TrackedEventSource(eventSourceId, revision, value)))
   }
 
   def modify[A <: DomainEvent, B](eventSourceId: Identifier, event: A)(callback: Uncommitted[A] => B): Reaction[B] = {
@@ -34,29 +34,37 @@ private[behavior] case class TrackedEventSources(eventSources: Map[Identifier, T
 
 case class Reaction[+A](tracked: TrackedEventSources, result: A)
 
+trait Behavior[+A] {
+  def apply(tracked: TrackedEventSources): Reaction[A]
+
+  def map[B](f: A => B): Behavior[B] = flatMap {x => pure(f(x))}
+
+  def flatMap[B](f: A => Behavior[B]): Behavior[B] = Behavior {tracked =>
+    val reaction = apply(tracked)
+    f(reaction.result)(reaction.tracked)
+  }
+
+  def then[B](next: Behavior[B]): Behavior[B] = flatMap(_ => next)
+}
+
 object Behavior {
-  def run[A](behavior: => A): Reaction[A] = current.withValue(Some(TrackedEventSources())) {
-    val value = behavior
-    Reaction(current.value.get, value)
+  private def apply[A](f: TrackedEventSources => Reaction[A]): Behavior[A] = new Behavior[A] {
+    def apply(tracked: TrackedEventSources) = f(tracked)
   }
 
-  def getEventSource(eventSourceId: Identifier): Option[Any] = Behavior {tracked =>
-    Reaction(tracked, tracked.getValue(eventSourceId))
+  def run[A](behavior: Behavior[A]): Reaction[A] = behavior(TrackedEventSources())
+
+  def pure[A](a: A): Behavior[A] = Behavior(Reaction(_, a))
+
+  def getTrackedEventSource(eventSourceId: Identifier): Behavior[Option[Any]] = Behavior {tracked =>
+    Reaction(tracked, tracked.getCurrentValue(eventSourceId))
   }
 
-  def trackEventSource(eventSourceId: Identifier, revision: Revision, value: Any) {
-    Behavior(tracked => Reaction(tracked.track(eventSourceId, revision, value), ()))
+  def trackEventSource[A](eventSourceId: Identifier, revision: Revision, value: A): Behavior[A] = Behavior {tracked =>
+    Reaction(tracked.track(eventSourceId, revision, value), value)
   }
 
-  def modifyEventSource[A <: DomainEvent, B](source: Identifier, event: A)(f: Uncommitted[A] => B): B = Behavior {
+  def modifyEventSource[A <: DomainEvent, B](source: Identifier, event: A)(f: Uncommitted[A] => B): Behavior[B] = Behavior {
     uow => uow.modify(source, event)(f)
   }
-
-  private def apply[A](callback: TrackedEventSources => Reaction[A]): A = {
-    val reaction = callback(current.value.getOrElse(error("no behavior active on current thread")))
-    current.value = Some(reaction.tracked)
-    reaction.result
-  }
-
-  private[behavior] object current extends DynamicVariable[Option[TrackedEventSources]](None)
 }

@@ -36,7 +36,7 @@ object Application {
       Invoice.createDraft(command.invoiceId)
     }
     result.register[ChangeInvoiceRecipient] {command =>
-      repository.get[DraftInvoice](command.invoiceId).changeRecipient(command.recipient)
+      repository.get[DraftInvoice](command.invoiceId).flatMap(_.changeRecipient(command.recipient))
     }
     result.registerHandler(CommandHandler.updateCommandHandler)
     result

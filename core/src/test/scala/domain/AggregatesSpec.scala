@@ -17,7 +17,7 @@ class AggregatesSpec extends org.specs2.mutable.SpecificationWithJUnit {
   }
 
   object ExampleAggregateRoot extends AggregateFactory[ExampleAggregateRoot] {
-    def create(id: Identifier, content: String): ExampleAggregateRoot = created(id, ExampleEvent(content))
+    def create(id: Identifier, content: String): Behavior[ExampleAggregateRoot] = created(id, ExampleEvent(content))
 
     protected[this] def applyEvent = created
 
@@ -73,10 +73,10 @@ class AggregatesSpec extends org.specs2.mutable.SpecificationWithJUnit {
       aggregate must_== ExampleAggregateRoot(TestId1, "hello")
     }
     "use tracked event sources to find the updated version" in new Context {
-      val aggregate = Behavior.run({
-        ExampleAggregateRoot.create(TestId1, "hello").update("world")
+      val aggregate = Behavior.run(
+        ExampleAggregateRoot.create(TestId1, "hello").flatMap(_.update("world")).flatMap(_ =>
           repository.get[ExampleAggregateRoot](TestId1)
-      }).result
+        )).result
 
       aggregate must_== ExampleAggregateRoot(TestId1, "world")
     }

@@ -1,14 +1,14 @@
 package com.zilverline.es2
 package domain
 
-import behavior._, util._
+import behavior._, Behavior._, util._
 
 trait AggregateEventHandler[-A <: DomainEvent, +B] {
   private[domain] def applyFromHistory(event: Recorded[A]): B
 }
 
 class AggregateRootEventHandler[-A <: DomainEvent, +B](aggregateId: Identifier, callback: Recorded[A] => B) extends AggregateEventHandler[A, B] {
-  def apply(event: A): B = Behavior.modifyEventSource(aggregateId, event)(callback)
+  def apply(event: A): Behavior[B] = Behavior.modifyEventSource(aggregateId, event)(callback)
 
   private[domain] def applyFromHistory(event: Recorded[A]): B = callback(event)
 }
@@ -71,11 +71,13 @@ trait AggregateFactory[AR <: AggregateRoot] extends EventSource[AggregateRoot] {
 }
 
 class AggregateRepository[-AR <: AggregateRoot : NotNothing](aggregates: Aggregates) {
-  def get[T <: AR : NotNothing](id: Identifier): T = {
-    Behavior.getEventSource(id).map(_.asInstanceOf[T]) getOrElse {
-      val aggregate = aggregates.get(id).getOrElse(error("aggregate <" + id + "> not found"))
-      Behavior.trackEventSource(id, aggregate.revision, aggregate.root)
-      aggregate.root.asInstanceOf[T]
+  def get[T <: AR : NotNothing](id: Identifier): Behavior[T] = {
+    getTrackedEventSource(id) flatMap {
+      case Some(aggregate) =>
+        pure(aggregate.asInstanceOf[T])
+      case None =>
+        val aggregate = aggregates(id)
+        trackEventSource(id, aggregate.revision, aggregate.root.asInstanceOf[T])
     }
   }
 }

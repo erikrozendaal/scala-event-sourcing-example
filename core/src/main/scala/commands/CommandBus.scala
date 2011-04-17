@@ -25,7 +25,7 @@ class CommandBus(eventStore: EventStore) {
     }
   }
 
-  def register[T <: Command](handler: T => Any)(implicit m: Manifest[T]) {
+  def register[T <: Command](handler: T => Behavior[Any])(implicit m: Manifest[T]) {
     registerHandler(CommandHandler[T](handler))
   }
 

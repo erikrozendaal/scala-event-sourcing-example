@@ -17,6 +17,8 @@ class BehaviorSpec extends org.specs2.mutable.SpecificationWithJUnit with org.sp
   implicit val scalaCheckParameters = set(minTestsOk -> 10)
 
   case class behavior() {
+    import Behavior._
+
     val EventSourceId = newIdentifier
     val eventStore = new MemoryEventStore
 
@@ -39,9 +41,11 @@ class BehaviorSpec extends org.specs2.mutable.SpecificationWithJUnit with org.sp
 
     def tracksMultipleChangesToSingleEventSource: Result = forAll {events: List[TestEvent] =>
       events.nonEmpty ==> {
-        val result = Behavior.run(events foreach { event =>
-          Behavior.modifyEventSource(EventSourceId, event)(_.payload.content)
-        }).tracked.eventSources(EventSourceId)
+        def record(events: List[TestEvent]): Behavior[Unit] = events match {
+          case Nil => pure()
+          case x::xs => Behavior.modifyEventSource(EventSourceId, x)(_.payload.content) then record(xs)
+        }
+        val result = Behavior.run(record(events)).tracked.eventSources(EventSourceId)
 
         result.changes == events &&
           result.currentRevision == InitialRevision + events.size &&
