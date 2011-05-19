@@ -13,8 +13,8 @@ class CommandBus(eventStore: EventStore) {
 
     Behavior.run(handler.invokeWithCommand(command)) match {
       case Reaction(uow, result) =>
-        for (source <- uow.eventSources.values) {
-          eventStore.commit(Commit(source.id, source.originalRevision, source.changes))
+        for (source <- uow.tracked.values) {
+          eventStore.commit(Commit(source.id, source.revision, source.changes))
         }
     }
   }

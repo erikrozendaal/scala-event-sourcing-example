@@ -21,7 +21,7 @@ class Project(info: ProjectInfo) extends ParentProject(info) {
     val slf4j_api = "org.slf4j" % "slf4j-api" % Slf4jVersion withSources ()
 
     val junit = "junit" % "junit" % "4.8.2" % "test" withSources ()
-    val specs2 = "org.specs2" %% "specs2" % "1.1" withSources ()
+    val specs2 = "org.specs2" %% "specs2" % "1.3" withSources ()
 
     def specs2Framework = new TestFramework("org.specs2.runner.SpecsFramework")
     override def testFrameworks = super.testFrameworks ++ Seq(specs2Framework)

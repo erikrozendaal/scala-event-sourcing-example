@@ -24,32 +24,28 @@ class BehaviorSpec extends org.specs2.mutable.SpecificationWithJUnit with org.sp
 
     def tracksEventSources: Result = forAll {(revision: Revision, value: String) =>
       (revision >= InitialRevision) ==> {
-        val result = Behavior.run(Behavior.trackEventSource(EventSourceId, revision, value)).tracked.eventSources(EventSourceId)
+        val result = Behavior.run(Behavior.trackEventSource(EventSourceId, revision, value)).session.tracked(EventSourceId)
 
         result == TrackedEventSource(EventSourceId, revision, value, IndexedSeq.empty)
       }
     }
 
     def tracksSingleChange: Result = forAll {event: TestEvent =>
-      val result = Behavior.run(Behavior.modifyEventSource(EventSourceId, event) {_.payload.content})
-        .tracked.eventSources(EventSourceId)
+      val result = Behavior.run(Behavior.record(EventSourceId, event) {_.payload.content})
+        .session.tracked(EventSourceId)
 
-      result.changes == Seq(event) &&
-        result.currentRevision == InitialRevision + 1 &&
-        result.currentValue == event.content
+      result.changes == Seq(event) && result.value == event.content
     }
 
     def tracksMultipleChangesToSingleEventSource: Result = forAll {events: List[TestEvent] =>
       events.nonEmpty ==> {
         def record(events: List[TestEvent]): Behavior[Unit] = events match {
           case Nil => pure()
-          case x::xs => Behavior.modifyEventSource(EventSourceId, x)(_.payload.content) then record(xs)
+          case x::xs => Behavior.record(EventSourceId, x)(_.payload.content) then record(xs)
         }
-        val result = Behavior.run(record(events)).tracked.eventSources(EventSourceId)
+        val result = Behavior.run(record(events)).session.tracked(EventSourceId)
 
-        result.changes == events &&
-          result.currentRevision == InitialRevision + events.size &&
-          result.currentValue == events.last.content
+        result.changes == events && result.value == events.last.content
       }
     }
   }

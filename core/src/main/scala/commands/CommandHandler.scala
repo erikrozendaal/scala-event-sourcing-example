@@ -18,6 +18,6 @@ object CommandHandler {
 
   def updateCommandHandler = CommandHandler[Update] {command =>
     Behavior.trackEventSource(command.eventSourceId, command.expectedRevision, ()).flatMap(_ =>
-    Behavior.modifyEventSource(command.eventSourceId, command.event)(_ => ()))
+    Behavior.record(command.eventSourceId, command.event)(_ => ()))
   }
 }

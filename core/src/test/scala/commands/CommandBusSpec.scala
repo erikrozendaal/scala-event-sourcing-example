@@ -37,7 +37,7 @@ class CommandBusSpec extends org.specs2.mutable.SpecificationWithJUnit {
 
     def commitEvents = {
       subject.register[ExampleCommand] {command =>
-        Behavior.modifyEventSource(Source, ExampleEvent(command.content))(_ => None)
+        Behavior.record(Source, ExampleEvent(command.content))(_ => None)
       }
 
       subject.send(ExampleCommand("hello"))
