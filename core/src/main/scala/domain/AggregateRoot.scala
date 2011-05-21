@@ -69,16 +69,3 @@ trait AggregateFactory[AR <: AggregateRoot] extends EventSource[AggregateRoot] {
     def apply[B](callback: Recorded[A] => B) = new AggregateFactoryEventHandler(callback)
   }
 }
-
-class AggregateRepository[-AR <: AggregateRoot : NotNothing](aggregates: Aggregates) {
-  def get[T <: AR : NotNothing](id: Identifier): Behavior[T] = {
-    import Behavior._
-    getTrackedEventSource[T](id) flatMap {
-      case Some(aggregate) =>
-        pure(aggregate)
-      case None =>
-        val aggregate = aggregates(id)
-        trackEventSource(id, aggregate.revision, aggregate.root.asInstanceOf[T])
-    }
-  }
-}

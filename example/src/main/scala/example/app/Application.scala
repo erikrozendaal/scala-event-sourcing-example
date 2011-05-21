@@ -14,7 +14,6 @@ import net.liftweb.util.Props
 object Application {
   val eventSerializer = new JsonSerializer()(Serialization.formats(new FullTypeHints(classOf[DomainEvent] :: Nil)))
   val aggregates = new Aggregates(Invoice)
-  val repository = new AggregateRepository[Invoice](aggregates)
   val reports = {
     val result = new Reports
     result.register(InvoiceReport())
@@ -31,12 +30,12 @@ object Application {
     result
   }
   val commands = {
-    val result = new CommandBus(eventStore)
+    val result = new CommandBus(eventStore, aggregates)
     result.register[CreateDraftInvoice] {command =>
       Invoice.createDraft(command.invoiceId)
     }
     result.register[ChangeInvoiceRecipient] {command =>
-      repository.get[DraftInvoice](command.invoiceId).flatMap(_.changeRecipient(command.recipient))
+      Reference[DraftInvoice](command.invoiceId).get.flatMap(_.changeRecipient(command.recipient))
     }
     result.registerHandler(CommandHandler.updateCommandHandler)
     result

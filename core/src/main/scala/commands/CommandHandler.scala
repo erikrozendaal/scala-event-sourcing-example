@@ -1,7 +1,7 @@
 package com.zilverline.es2
 package commands
 
-import behavior._
+import domain._
 
 abstract class CommandHandler[T <: Command, R](implicit m: Manifest[T]) {
   def apply(command: T): Behavior[R]

@@ -3,6 +3,7 @@ package commands
 
 import eventstore.MemoryEventStore
 import org.specs2.execute.Success
+import domain.Aggregates
 
 class CommandHandlerSpec extends org.specs2.mutable.SpecificationWithJUnit {
 
@@ -10,7 +11,7 @@ class CommandHandlerSpec extends org.specs2.mutable.SpecificationWithJUnit {
     val AggregateIdentifier = newIdentifier
 
     val eventStore = new MemoryEventStore
-    val commands = new CommandBus(eventStore)
+    val commands = new CommandBus(eventStore, new Aggregates())
 
     commands registerHandler CommandHandler.updateCommandHandler
   }

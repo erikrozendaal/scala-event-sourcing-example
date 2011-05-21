@@ -25,10 +25,10 @@ class AggregatesSpec extends org.specs2.mutable.SpecificationWithJUnit {
   }
 
   trait Context extends Success {
-    val subject = new Aggregates(ExampleAggregateRoot)
-    val repository = new AggregateRepository[ExampleAggregateRoot](subject)
+    implicit val subject = new Aggregates(ExampleAggregateRoot)
 
     val TestId1 = newIdentifier
+    val Ref1 = Reference[ExampleAggregateRoot](TestId1)
 
     val justCreated = Behavior.run(ExampleAggregateRoot.create(TestId1, "hello")).result
     val updated = Behavior.run(justCreated.update("world")).result
@@ -53,30 +53,26 @@ class AggregatesSpec extends org.specs2.mutable.SpecificationWithJUnit {
     }
   }
 
-  "aggregate repository" should {
+  "references" should {
     "fail when aggregate does not exist" in new Context {
-      Behavior.run(repository.get[ExampleAggregateRoot](newIdentifier)) must throwA[RuntimeException]
+      Behavior.run(Reference[ExampleAggregateRoot](newIdentifier).get) must throwA[RuntimeException]
     }
     "use aggregates store to find initial version" in new Context {
       subject applyEvent Committed(TestId1, 1, ExampleEvent("hello"))
 
-      Behavior.run(repository.get[ExampleAggregateRoot](TestId1)).result must_== ExampleAggregateRoot(TestId1, "hello")
+      Behavior.run(Reference[ExampleAggregateRoot](TestId1).get).result must_== ExampleAggregateRoot(TestId1, "hello")
     }
-    "use tracked event sources to find current version" in new Context {
+    "use global aggregates to find current version" in new Context {
       subject applyEvent Committed(TestId1, 1, ExampleEvent("hello"))
 
-      val aggregate = Behavior.run({
-        repository.get[ExampleAggregateRoot](TestId1)
-        repository.get[ExampleAggregateRoot](TestId1)
-      }).result
+      val aggregate = Behavior.run(Ref1.get).result
 
       aggregate must_== ExampleAggregateRoot(TestId1, "hello")
     }
     "use tracked event sources to find the updated version" in new Context {
       val aggregate = Behavior.run(
-        ExampleAggregateRoot.create(TestId1, "hello").flatMap(_.update("world")).flatMap(_ =>
-          repository.get[ExampleAggregateRoot](TestId1)
-        )).result
+        ExampleAggregateRoot.create(TestId1, "hello").flatMap(_.update("world")).then(Ref1.get)
+      ).result
 
       aggregate must_== ExampleAggregateRoot(TestId1, "world")
     }

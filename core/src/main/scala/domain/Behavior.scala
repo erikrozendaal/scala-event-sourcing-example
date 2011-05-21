@@ -1,9 +1,9 @@
 package com.zilverline.es2
-package behavior
+package domain
 
 import util.NotNothing
 
-private[behavior] case class TrackedEventSource[+T](
+private[domain] case class TrackedEventSource[+T](
   id: Identifier,
   revision: Revision,
   value: T,
@@ -15,18 +15,18 @@ private[behavior] case class TrackedEventSource[+T](
   }
 }
 
-private[behavior] case class Session(tracked: Map[Identifier, TrackedEventSource[Any]] = Map.empty) {
+private[domain] case class Session(aggregates: Aggregates, tracked: Map[Identifier, TrackedEventSource[Any]] = Map.empty) {
   def value[A: NotNothing](eventSourceId: Identifier): Option[A] = tracked.get(eventSourceId).map(_.value.asInstanceOf[A])
 
   def track(eventSourceId: Identifier, revision: Revision, value: Any): Session = {
     require(!tracked.contains(eventSourceId), "already tracking " + eventSourceId)
-    copy(tracked.updated(eventSourceId, TrackedEventSource(eventSourceId, revision, value)))
+    copy(tracked = tracked.updated(eventSourceId, TrackedEventSource(eventSourceId, revision, value)))
   }
 
   def record[A <: DomainEvent, B](eventSourceId: Identifier, event: A)(handler: Uncommitted[A] => B): Reaction[B] = {
     val originalState = tracked.getOrElse(eventSourceId, TrackedEventSource(eventSourceId, InitialRevision, ()))
     val updatedState = originalState.record(event)(handler)
-    Reaction(copy(tracked.updated(eventSourceId, updatedState)), updatedState.value)
+    Reaction(copy(tracked = tracked.updated(eventSourceId, updatedState)), updatedState.value)
   }
 }
 
@@ -50,8 +50,23 @@ trait Behavior[+A] {
   def then[B](next: Behavior[B]): Behavior[B] = flatMap(_ => next)
 }
 
+case class Reference[+A](aggregateId: Identifier) {
+  def get: Behavior[A] = {
+    import Behavior._
+    getTrackedEventSource[A](aggregateId) flatMap {
+      case Some(aggregate) =>
+        pure(aggregate)
+      case None =>
+        getAggregate(aggregateId).flatMap {
+          aggregate =>
+            trackEventSource(aggregate.id, aggregate.revision, aggregate.root.asInstanceOf[A])
+        }
+    }
+  }
+}
+
 object Behavior {
-  def run[A](behavior: Behavior[A]): Reaction[A] = behavior(Session())
+  def run[A](behavior: Behavior[A])(implicit aggregates: Aggregates): Reaction[A] = behavior(Session(aggregates))
 
   def pure[A](a: A): Behavior[A] = Behavior {Reaction(_, a)}
 
@@ -67,7 +82,11 @@ object Behavior {
     session => session.record(source, event)(handler)
   }
 
-  private def apply[A](f: Session => Reaction[A]): Behavior[A] = new Behavior[A] {
-    def apply(tracked: Session) = f(tracked)
+  def getAggregate(id: Identifier): Behavior[Aggregate] = Behavior {
+    session => Reaction(session, session.aggregates(id))
+  }
+
+  private[domain] def apply[A](f: Session => Reaction[A]): Behavior[A] = new Behavior[A] {
+    def apply(session: Session) = f(session)
   }
 }

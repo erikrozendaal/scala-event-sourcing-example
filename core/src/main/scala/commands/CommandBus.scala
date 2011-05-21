@@ -1,17 +1,17 @@
 package com.zilverline.es2
 package commands
 
-import behavior._
+import domain._
 import scala.collection.mutable.{Map => MMap}
 import eventstore.{Commit, EventStore}
 import util.TypeMap
 
-class CommandBus(eventStore: EventStore) {
+class CommandBus(eventStore: EventStore, aggregates: Aggregates) {
   def send(command: Command) {
     val handler = handlers.getMostSpecific(command.getClass)
       .getOrElse(throw new IllegalArgumentException("no handler for found command: " + command))
 
-    Behavior.run(handler.invokeWithCommand(command)) match {
+    Behavior.run(handler.invokeWithCommand(command))(aggregates) match {
       case Reaction(uow, result) =>
         for (source <- uow.tracked.values) {
           eventStore.commit(Commit(source.id, source.revision, source.changes))

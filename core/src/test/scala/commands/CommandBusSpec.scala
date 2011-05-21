@@ -1,7 +1,7 @@
 package com.zilverline.es2
 package commands
 
-import behavior._, Behavior._
+import domain._, Behavior._
 
 class CommandBusSpec extends org.specs2.mutable.SpecificationWithJUnit {
 
@@ -14,8 +14,9 @@ class CommandBusSpec extends org.specs2.mutable.SpecificationWithJUnit {
   case class context() {
     val Source = newIdentifier
 
+    val aggregates = new Aggregates()
     val eventStore = new eventstore.MemoryEventStore
-    val subject = new CommandBus(eventStore)
+    val subject = new CommandBus(eventStore, aggregates)
 
     var handlerInvoked = false
 

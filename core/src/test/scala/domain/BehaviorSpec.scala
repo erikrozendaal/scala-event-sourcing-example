@@ -1,5 +1,5 @@
 package com.zilverline.es2
-package behavior
+package domain
 
 import eventstore._
 import org.specs2.execute.Result
@@ -19,6 +19,7 @@ class BehaviorSpec extends org.specs2.mutable.SpecificationWithJUnit with org.sp
   case class behavior() {
     import Behavior._
 
+    implicit val aggregates = new Aggregates()
     val EventSourceId = newIdentifier
     val eventStore = new MemoryEventStore
 
