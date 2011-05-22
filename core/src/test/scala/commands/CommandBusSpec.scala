@@ -14,13 +14,13 @@ class CommandBusSpec extends org.specs2.mutable.SpecificationWithJUnit {
   case class context() {
     val Source = newIdentifier
 
-    val aggregates = new Aggregates()
+    implicit val aggregates = new Aggregates()
     val eventStore = new eventstore.MemoryEventStore
     val subject = new CommandBus(eventStore, aggregates)
 
     var handlerInvoked = false
 
-    def testHandler = CommandHandler[ExampleCommand] {command => handlerInvoked = true; pure()}
+    def testHandler = CommandHandler[ExampleCommand] {command => handlerInvoked = true; Reference[Nothing](Source).run(pure())}
 
     subject.registerHandler(testHandler)
 
@@ -38,7 +38,7 @@ class CommandBusSpec extends org.specs2.mutable.SpecificationWithJUnit {
 
     def commitEvents = {
       subject.register[ExampleCommand] {command =>
-        Behavior.record(Source, ExampleEvent(command.content))(_ => None)
+        Reference[Nothing](Source).run(record(Source, ExampleEvent(command.content))(_ => None))
       }
 
       subject.send(ExampleCommand("hello"))

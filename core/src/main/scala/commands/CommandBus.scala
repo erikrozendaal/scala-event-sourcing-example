@@ -11,7 +11,7 @@ class CommandBus(eventStore: EventStore, aggregates: Aggregates) {
     val handler = handlers.getMostSpecific(command.getClass)
       .getOrElse(throw new IllegalArgumentException("no handler for found command: " + command))
 
-    Behavior.run(handler.invokeWithCommand(command))(aggregates) match {
+    handler.invokeWithCommand(command) match {
       case Reaction(uow, result) =>
         for (source <- uow.tracked.values) {
           eventStore.commit(Commit(source.id, source.revision, source.changes))
@@ -25,7 +25,7 @@ class CommandBus(eventStore: EventStore, aggregates: Aggregates) {
     }
   }
 
-  def register[T <: Command](handler: T => Behavior[Any])(implicit m: Manifest[T]) {
+  def register[T <: Command](handler: T => Reaction[Any])(implicit m: Manifest[T]) {
     registerHandler(CommandHandler[T](handler))
   }
 

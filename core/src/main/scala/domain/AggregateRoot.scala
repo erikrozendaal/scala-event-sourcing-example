@@ -1,8 +1,6 @@
 package com.zilverline.es2
 package domain
 
-import behavior._, util._
-
 trait AggregateEventHandler[-A <: DomainEvent, +B] {
   private[domain] def applyFromHistory(event: Recorded[A]): B
 }

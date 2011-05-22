@@ -25,15 +25,14 @@ class BehaviorSpec extends org.specs2.mutable.SpecificationWithJUnit with org.sp
 
     def tracksEventSources: Result = forAll {(revision: Revision, value: String) =>
       (revision >= InitialRevision) ==> {
-        val result = Behavior.run(Behavior.trackEventSource(EventSourceId, revision, value)).session.tracked(EventSourceId)
+        val result = Behavior.trackEventSource(EventSourceId, revision, value)(Session(EventSourceId, aggregates)).session.tracked(EventSourceId)
 
         result == TrackedEventSource(EventSourceId, revision, value, IndexedSeq.empty)
       }
     }
 
     def tracksSingleChange: Result = forAll {event: TestEvent =>
-      val result = Behavior.run(Behavior.record(EventSourceId, event) {_.payload.content})
-        .session.tracked(EventSourceId)
+      val result = (Behavior.record(EventSourceId, event) {_.payload.content})(Session(EventSourceId, aggregates)).session.tracked(EventSourceId)
 
       result.changes == Seq(event) && result.value == event.content
     }
@@ -44,7 +43,7 @@ class BehaviorSpec extends org.specs2.mutable.SpecificationWithJUnit with org.sp
           case Nil => pure()
           case x::xs => Behavior.record(EventSourceId, x)(_.payload.content) then record(xs)
         }
-        val result = Behavior.run(record(events)).session.tracked(EventSourceId)
+        val result = record(events)(Session(EventSourceId, aggregates)).session.tracked(EventSourceId)
 
         result.changes == events && result.value == events.last.content
       }

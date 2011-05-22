@@ -32,10 +32,10 @@ object Application {
   val commands = {
     val result = new CommandBus(eventStore, aggregates)
     result.register[CreateDraftInvoice] {command =>
-      Invoice.createDraft(command.invoiceId)
+      Reference[Invoice](command.invoiceId).run(Invoice.createDraft(command.invoiceId))
     }
     result.register[ChangeInvoiceRecipient] {command =>
-      Reference[DraftInvoice](command.invoiceId).get.flatMap(_.changeRecipient(command.recipient))
+      Reference[DraftInvoice](command.invoiceId).run(_.changeRecipient(command.recipient))
     }
     result.registerHandler(CommandHandler.updateCommandHandler)
     result

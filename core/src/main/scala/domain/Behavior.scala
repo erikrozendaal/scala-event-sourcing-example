@@ -15,7 +15,7 @@ private[domain] case class TrackedEventSource[+T](
   }
 }
 
-private[domain] case class Session(aggregates: Aggregates, tracked: Map[Identifier, TrackedEventSource[Any]] = Map.empty) {
+private[domain] case class Session(aggregateId: Identifier, aggregates: Aggregates, tracked: Map[Identifier, TrackedEventSource[Any]] = Map.empty) {
   def value[A: NotNothing](eventSourceId: Identifier): Option[A] = tracked.get(eventSourceId).map(_.value.asInstanceOf[A])
 
   def track(eventSourceId: Identifier, revision: Revision, value: Any): Session = {
@@ -47,26 +47,36 @@ trait Behavior[+A] {
       f(reaction.result)(reaction.session)
   }
 
-  def then[B](next: Behavior[B]): Behavior[B] = flatMap(_ => next)
+  def then[B](next: => Behavior[B]): Behavior[B] = flatMap(_ => next)
 }
 
 case class Reference[+A](aggregateId: Identifier) {
   def get: Behavior[A] = {
     import Behavior._
-    getTrackedEventSource[A](aggregateId) flatMap {
+    getTrackedEventSource[A](aggregateId).flatMap {
       case Some(aggregate) =>
         pure(aggregate)
       case None =>
         getAggregate(aggregateId).flatMap {
-          aggregate =>
+          case Some(aggregate) =>
             trackEventSource(aggregate.id, aggregate.revision, aggregate.root.asInstanceOf[A])
+          case None =>
+            error("unknown aggregate <" + aggregateId + ">")
         }
     }
+  }
+
+  def run[A](f: => Behavior[A])(implicit aggregates: Aggregates): Reaction[A] = {
+    f(Session(aggregateId, aggregates))
+  }
+
+  def run[B](f: A => Behavior[B])(implicit aggregates: Aggregates): Reaction[B] = {
+    get.flatMap(f)(Session(aggregateId, aggregates))
   }
 }
 
 object Behavior {
-  def run[A](behavior: Behavior[A])(implicit aggregates: Aggregates): Reaction[A] = behavior(Session(aggregates))
+//  def run[A](behavior: Behavior[A])(implicit aggregates: Aggregates): Reaction[A] = behavior(Session(aggregates))
 
   def pure[A](a: A): Behavior[A] = Behavior {Reaction(_, a)}
 
@@ -82,8 +92,8 @@ object Behavior {
     session => session.record(source, event)(handler)
   }
 
-  def getAggregate(id: Identifier): Behavior[Aggregate] = Behavior {
-    session => Reaction(session, session.aggregates(id))
+  def getAggregate(id: Identifier): Behavior[Option[Aggregate]] = Behavior {
+    session => Reaction(session, session.aggregates.get(id))
   }
 
   private[domain] def apply[A](f: Session => Reaction[A]): Behavior[A] = new Behavior[A] {
