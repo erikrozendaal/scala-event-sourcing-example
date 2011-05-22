@@ -5,7 +5,7 @@ import org.specs2.execute.Success
 
 class AggregatesSpec extends org.specs2.mutable.SpecificationWithJUnit {
 
-  case class ExampleAggregateRoot(id: Identifier, content: String) extends AggregateRoot {
+  case class ExampleAggregateRoot(content: String) extends AggregateRoot {
     type Event = ExampleEvent
 
     def update(content: String) = updated(ExampleEvent(content))
@@ -16,11 +16,11 @@ class AggregatesSpec extends org.specs2.mutable.SpecificationWithJUnit {
   }
 
   object ExampleAggregateRoot extends AggregateFactory[ExampleAggregateRoot] {
-    def create(id: Identifier, content: String): Behavior[ExampleAggregateRoot] = created(id, ExampleEvent(content))
+    def create(id: Identifier, content: String): Behavior[ExampleAggregateRoot] = created(ExampleEvent(content))
 
     protected[this] def applyEvent = created
 
-    private def created = when[ExampleEvent] {event => ExampleAggregateRoot(event.eventSourceId, event.content)}
+    private def created = when[ExampleEvent] {event => ExampleAggregateRoot(event.content)}
   }
 
   trait Context extends Success {
@@ -29,9 +29,9 @@ class AggregatesSpec extends org.specs2.mutable.SpecificationWithJUnit {
     val TestId1 = newIdentifier
     val Ref1 = Reference[ExampleAggregateRoot](TestId1)
 
-    val justCreated = ExampleAggregateRoot(TestId1, "hello")
+    val justCreated = ExampleAggregateRoot("hello")
     val updated = justCreated.copy(content = "world")
-    val different = ExampleAggregateRoot(TestId1, "different?")
+    val different = ExampleAggregateRoot("different?")
   }
 
   "aggregate store" should {
@@ -59,21 +59,21 @@ class AggregatesSpec extends org.specs2.mutable.SpecificationWithJUnit {
     "use aggregates store to find initial version" in new Context {
       subject applyEvent Committed(TestId1, 1, ExampleEvent("hello"))
 
-      Ref1.run(a => Behavior.pure(a)).result must_== ExampleAggregateRoot(TestId1, "hello")
+      Ref1.run(a => Behavior.pure(a)).result must_== ExampleAggregateRoot("hello")
     }
     "use global aggregates to find current version" in new Context {
       subject applyEvent Committed(TestId1, 1, ExampleEvent("hello"))
 
       val aggregate = Ref1.run(a => Behavior.pure(a)).result
 
-      aggregate must_== ExampleAggregateRoot(TestId1, "hello")
+      aggregate must_== ExampleAggregateRoot("hello")
     }
     "use tracked event sources to find the updated version" in new Context {
       val aggregate = Ref1.run {
         ExampleAggregateRoot.create(TestId1, "hello").flatMap(_.update("world")).then(Ref1.get)
       }.result
 
-      aggregate must_== ExampleAggregateRoot(TestId1, "world")
+      aggregate must_== ExampleAggregateRoot("world")
     }
   }
 }

@@ -1,18 +1,8 @@
 package com.zilverline.es2
 package domain
 
-trait AggregateEventHandler[-A <: DomainEvent, +B] {
-  private[domain] def applyFromHistory(event: Recorded[A]): B
-}
-
-class AggregateRootEventHandler[-A <: DomainEvent, +B](aggregateId: Identifier, callback: Recorded[A] => B) extends AggregateEventHandler[A, B] {
-  def apply(event: A): Behavior[B] = Behavior.record(aggregateId, event)(callback)
-
-  private[domain] def applyFromHistory(event: Recorded[A]): B = callback(event)
-}
-
-class AggregateFactoryEventHandler[-A <: DomainEvent, +B](callback: Recorded[A] => B) extends AggregateEventHandler[A, B] {
-  def apply(aggregateId: Identifier, event: A) = Behavior.record(aggregateId, event)(callback)
+class AggregateEventHandler[-A <: DomainEvent, +B](callback: Recorded[A] => B) {
+  def apply(event: A): Behavior[B] = Behavior.record(event)(callback)
 
   private[domain] def applyFromHistory(event: Recorded[A]): B = callback(event)
 }
@@ -29,41 +19,25 @@ object AggregateEventHandler {
 }
 
 trait EventSource[ES <: EventSource[ES]] {
-  protected[this] def applyEvent: PartialFunction[RecordedEvent, ES]
-
-  private[domain] def internalApplyEvent = applyEvent
-}
-
-trait AggregateRoot extends EventSource[AggregateRoot] {
   protected[this] type Event <: DomainEvent
 
-  protected[this] def id: Identifier
+  protected[this] def applyEvent: PartialFunction[RecordedEvent, ES]
 
   protected[this] def when[A <: Event] = new When[A]
 
-  implicit protected[this] def payloadOfRecordedEvent[A <: Event](recorded: Recorded[A]): A = recorded.payload
-
   protected[this] class When[A <: DomainEvent] {
-    def apply[B](callback: Recorded[A] => B) = new AggregateRootEventHandler(id, callback)
+    def apply[B](callback: Recorded[A] => B) = new AggregateEventHandler(callback)
   }
+
+  implicit protected[this] def payloadOfRecordedEvent[A <: Event](recorded: Recorded[A]): A = recorded.payload
 
   /* APIs for internal use */
   private[domain] type InternalEvent = Event
+  private[domain] def internalApplyEvent = applyEvent
 }
 
+trait AggregateRoot extends EventSource[AggregateRoot]
+
 trait AggregateFactory[AR <: AggregateRoot] extends EventSource[AggregateRoot] {
-  def loadFromHistory(history: Iterable[RecordedEvent]): AR = {
-    val aggregate = applyEvent(history.head)
-    (aggregate /: history.tail)(_.internalApplyEvent(_)).asInstanceOf[AR]
-  }
-
   protected[this] type Event = AR#InternalEvent
-
-  protected[this] def when[A <: Event] = new When[A]
-
-  implicit protected[this] def payloadOfRecordedEvent[A <: Event](recorded: Recorded[A]): A = recorded.payload
-
-  protected[this] class When[A <: DomainEvent] {
-    def apply[B](callback: Recorded[A] => B) = new AggregateFactoryEventHandler(callback)
-  }
 }

@@ -15,7 +15,7 @@ private[domain] case class TrackedEventSource[+T](
   }
 }
 
-private[domain] case class Session(aggregateId: Identifier, aggregates: Aggregates, tracked: Map[Identifier, TrackedEventSource[Any]] = Map.empty) {
+private[domain] case class Session(currentAggregateId: Identifier, aggregates: Aggregates, tracked: Map[Identifier, TrackedEventSource[Any]] = Map.empty) {
   def value[A: NotNothing](eventSourceId: Identifier): Option[A] = tracked.get(eventSourceId).map(_.value.asInstanceOf[A])
 
   def track(eventSourceId: Identifier, revision: Revision, value: Any): Session = {
@@ -23,10 +23,10 @@ private[domain] case class Session(aggregateId: Identifier, aggregates: Aggregat
     copy(tracked = tracked.updated(eventSourceId, TrackedEventSource(eventSourceId, revision, value)))
   }
 
-  def record[A <: DomainEvent, B](eventSourceId: Identifier, event: A)(handler: Uncommitted[A] => B): Reaction[B] = {
-    val originalState = tracked.getOrElse(eventSourceId, TrackedEventSource(eventSourceId, InitialRevision, ()))
+  def record[A <: DomainEvent, B](event: A)(handler: Uncommitted[A] => B): Reaction[B] = {
+    val originalState = tracked.getOrElse(currentAggregateId, TrackedEventSource(currentAggregateId, InitialRevision, ()))
     val updatedState = originalState.record(event)(handler)
-    Reaction(copy(tracked = tracked.updated(eventSourceId, updatedState)), updatedState.value)
+    Reaction(copy(tracked = tracked.updated(currentAggregateId, updatedState)), updatedState.value)
   }
 }
 
@@ -76,8 +76,6 @@ case class Reference[+A](aggregateId: Identifier) {
 }
 
 object Behavior {
-//  def run[A](behavior: Behavior[A])(implicit aggregates: Aggregates): Reaction[A] = behavior(Session(aggregates))
-
   def pure[A](a: A): Behavior[A] = Behavior {Reaction(_, a)}
 
   def getTrackedEventSource[A](eventSourceId: Identifier): Behavior[Option[A]] = Behavior {
@@ -88,12 +86,16 @@ object Behavior {
     session => Reaction(session.track(eventSourceId, revision, value), value)
   }
 
-  def record[A <: DomainEvent, B](source: Identifier, event: A)(handler: Uncommitted[A] => B): Behavior[B] = Behavior {
-    session => session.record(source, event)(handler)
+  def record[A <: DomainEvent, B](event: A)(handler: Uncommitted[A] => B): Behavior[B] = Behavior {
+    session => session.record(event)(handler)
   }
 
   def getAggregate(id: Identifier): Behavior[Option[Aggregate]] = Behavior {
     session => Reaction(session, session.aggregates.get(id))
+  }
+
+  def currentAggregateId: Behavior[Identifier] = Behavior {
+    session => Reaction(session, session.currentAggregateId)
   }
 
   private[domain] def apply[A](f: Session => Reaction[A]): Behavior[A] = new Behavior[A] {

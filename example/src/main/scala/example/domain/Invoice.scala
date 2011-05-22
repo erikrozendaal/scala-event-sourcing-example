@@ -1,6 +1,5 @@
 package example.domain
 
-import com.zilverline.es2._
 import com.zilverline.es2.domain._
 import example.events._
 
@@ -9,13 +8,12 @@ trait Invoice extends AggregateRoot {
 }
 
 object Invoice extends AggregateFactory[Invoice] {
-  def createDraft(id: Identifier) = created(id, InvoiceCreated())
+  def createDraft = created(InvoiceCreated())
   protected[this] def applyEvent = created
-  private def created = when[InvoiceCreated] {event => new DraftInvoice(event.eventSourceId)}
+  private def created = when[InvoiceCreated] {event => DraftInvoice()}
 }
 
 case class DraftInvoice(
-  id: Identifier,
   recipient: Option[String] = None,
   nextItemId: Int = 1,
   items: Map[Int, InvoiceItem] = Map.empty)

@@ -21,7 +21,7 @@ object CommandHandler {
     implicit val aggregates = new Aggregates()
     Reference[Nothing](command.eventSourceId).run {
       Behavior.trackEventSource(command.eventSourceId, command.expectedRevision, ()).flatMap(_ =>
-      Behavior.record(command.eventSourceId, command.event)(_ => ()))
+      Behavior.record(command.event)(_ => ()))
     }
   }
 }
