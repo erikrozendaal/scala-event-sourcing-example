@@ -18,6 +18,7 @@ class Project(info: ProjectInfo) extends ParentProject(info) {
     val squeryl = "org.squeryl" %% "squeryl" % "0.9.4-RC6" withSources ()
     val scalaz = "org.scalaz" %% "scalaz-core" % ScalazVersion withSources ()
     val liftweb_json = "net.liftweb" %% "lift-json" % LiftVersion withSources ()
+    val liftweb_json_ext = "net.liftweb" %% "lift-json-ext" % LiftVersion withSources ()
     val slf4j_api = "org.slf4j" % "slf4j-api" % Slf4jVersion withSources ()
 
     val junit = "junit" % "junit" % "4.8.2" % "test" withSources ()

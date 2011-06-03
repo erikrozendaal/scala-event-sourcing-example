@@ -1,10 +1,9 @@
 package example.snippet
 
-import example.commands._
-import com.zilverline.es2._, commands.CommandBus, reports.QueryableReport
+import example.domain._
+import com.zilverline.es2._, commands.Commands, domain._, reports.ReportRef
 import net.liftweb.util._
 import Helpers._
-import java.util.UUID
 import net.liftweb.sitemap._
 import net.liftweb.http._, js.JsCmds.FocusOnLoad
 import example.reports.{InvoiceDocument, InvoiceReport}
@@ -26,7 +25,9 @@ object Invoices {
   val listInvoicesLink = menu.loc.createDefaultLink.get.text
 }
 
-class Invoices(commands: CommandBus, invoiceReport: QueryableReport[InvoiceReport]) extends DispatchSnippet {
+class Invoices(commands: Commands, invoiceReport: ReportRef[InvoiceReport]) extends DispatchSnippet {
+  import commands._
+
   def dispatch: DispatchIt = {
     case "list" => list
     case "createDraft" => createDraft
@@ -48,7 +49,9 @@ class Invoices(commands: CommandBus, invoiceReport: QueryableReport[InvoiceRepor
   private def createDraft: NodeSeq => NodeSeq = {
     if (S.post_?) {
       val invoiceId = newIdentifier
-      commands.send(CreateDraftInvoice(invoiceId))
+
+      create(invoiceId) {Invoice.createDraft}
+
       S.notice("Draft invoice created.")
       S.redirectTo(Invoices.editInvoiceLoc.calcHref(InvoiceDocument(invoiceId)))
     }
@@ -57,7 +60,9 @@ class Invoices(commands: CommandBus, invoiceReport: QueryableReport[InvoiceRepor
   }
 }
 
-class EditInvoiceSnippet(commands: CommandBus) extends SimpleStateful {
+class EditInvoiceSnippet(commands: Commands) extends SimpleStateful {
+  import commands._
+
   def render = {
     val invoice = Invoices.editInvoiceLoc.currentValue.open_!
     var recipient = invoice.recipient.getOrElse("")
@@ -67,9 +72,11 @@ class EditInvoiceSnippet(commands: CommandBus) extends SimpleStateful {
       if (recipient.isEmpty) {
         S.error("The recipient must be specified")
       } else {
-        commands.send(ChangeInvoiceRecipient(invoice.invoiceId, recipient))
+
+        on[DraftInvoice](invoice.invoiceId) execute {_.changeRecipient(recipient)}
+
         S.notice("Recipient changed to '" + recipient + "'.")
-        S.redirectTo(Invoices.listInvoicesLink)
+        S.redirectTo(Invoices.editInvoiceLoc.calcHref(invoice))
       }
     }
 

@@ -4,10 +4,11 @@ package reports
 import util._
 
 import scala.collection.mutable.{Map => MMap}
+import scala.concurrent.stm._
 
 trait Report[-A <: DomainEvent] extends EventProcessor[A, Report[A]]
 
-trait QueryableReport[+A <: Report[_]] {
+trait ReportRef[+A <: Report[_]] {
   def query[B](f: A => B): B
 }
 
@@ -16,15 +17,15 @@ class Reports extends EventProcessor[DomainEvent, Unit] {
   def register[A <: DomainEvent](report: Report[A])(implicit m: Manifest[A]) {
     require(!reportByType.contains(report.getClass), "report of type " + report.getClass.getName + " already registered")
 
-    val reportVar = new AtomicVar(report)
-    reportByType += report.getClass -> reportVar.asInstanceOf[AtomicVar[Report[_]]]
+    val reportVar = Ref(report).single
+    reportByType += report.getClass -> reportVar.asInstanceOf[Ref.View[Report[_]]]
     reportsByEventType = reportsByEventType + (m.erasure -> {
         event: CommittedEvent =>
-          reportVar.modifyWithRetry(_.applyEvent(event.asInstanceOf[Committed[A]]))
+          reportVar.transform(_.applyEvent(event.asInstanceOf[Committed[A]]))
     })
   }
 
-  def queryable[A <: Report[_] : Manifest : NotNothing]: QueryableReport[A] = new QueryableReport[A] {
+  def queryable[A <: Report[_] : Manifest : NotNothing]: ReportRef[A] = new ReportRef[A] {
     def query[B](f: A => B) = f(Reports.this.get[A])
   }
 
@@ -36,6 +37,6 @@ class Reports extends EventProcessor[DomainEvent, Unit] {
     }
   }
 
-  private val reportByType: MMap[Class[_], AtomicVar[Report[_]]] = MMap.empty
+  private val reportByType: MMap[Class[_], Ref.View[Report[_]]] = MMap.empty
   private var reportsByEventType: TypeMap[CommittedEvent => Unit] = TypeMap.empty
 }

@@ -16,7 +16,7 @@ class AggregatesSpec extends org.specs2.mutable.SpecificationWithJUnit {
   }
 
   object ExampleAggregateRoot extends AggregateFactory[ExampleAggregateRoot] {
-    def create(id: Identifier, content: String): Behavior[ExampleAggregateRoot] = created(ExampleEvent(content))
+    def create(content: String): Behavior[ExampleAggregateRoot] = created(ExampleEvent(content))
 
     protected[this] def applyEvent = created
 
@@ -24,10 +24,11 @@ class AggregatesSpec extends org.specs2.mutable.SpecificationWithJUnit {
   }
 
   trait Context extends Success {
-    implicit val subject = new Aggregates(ExampleAggregateRoot)
-
     val TestId1 = newIdentifier
     val Ref1 = Reference[ExampleAggregateRoot](TestId1)
+
+    val subject = new Aggregates(ExampleAggregateRoot)
+    val session = Session(newIdentifier, subject)
 
     val justCreated = ExampleAggregateRoot("hello")
     val updated = justCreated.copy(content = "world")
@@ -54,24 +55,22 @@ class AggregatesSpec extends org.specs2.mutable.SpecificationWithJUnit {
 
   "references" should {
     "fail when aggregate does not exist" in new Context {
-      Reference[ExampleAggregateRoot](newIdentifier).run(_ => Behavior.pure()) must throwA[RuntimeException]
+      Reference[ExampleAggregateRoot](newIdentifier).modify(_ => Behavior.pure())(session) must throwA[RuntimeException]
     }
     "use aggregates store to find initial version" in new Context {
       subject applyEvent Committed(TestId1, 1, ExampleEvent("hello"))
 
-      Ref1.run(a => Behavior.pure(a)).result must_== ExampleAggregateRoot("hello")
+      Ref1.modify(a => Behavior.pure(a))(session).result must_== ExampleAggregateRoot("hello")
     }
     "use global aggregates to find current version" in new Context {
       subject applyEvent Committed(TestId1, 1, ExampleEvent("hello"))
 
-      val aggregate = Ref1.run(a => Behavior.pure(a)).result
+      val aggregate = Ref1.modify(a => Behavior.pure(a))(session).result
 
       aggregate must_== ExampleAggregateRoot("hello")
     }
     "use tracked event sources to find the updated version" in new Context {
-      val aggregate = Ref1.run {
-        ExampleAggregateRoot.create(TestId1, "hello").flatMap(_.update("world")).then(Ref1.get)
-      }.result
+      val aggregate = ExampleAggregateRoot.create("hello").flatMap(_.update("world")).then(Ref1.get)(Session(TestId1, subject)).result
 
       aggregate must_== ExampleAggregateRoot("world")
     }

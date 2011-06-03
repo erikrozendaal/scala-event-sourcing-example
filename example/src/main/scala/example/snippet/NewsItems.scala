@@ -1,16 +1,15 @@
 package example.snippet
 
 import com.zilverline.es2._
-import com.zilverline.es2.commands._
-import eventstore.OptimisticLockingException
+import eventstore.{Commit, EventStore, OptimisticLockingException}
 import net.liftweb.util._
 import Helpers._
 import example.reports.NewsItemReport
 import example.events.NewsItemAdded
 import net.liftweb.http._, js._, js.JsCmds._
-import reports.QueryableReport
+import reports.ReportRef
 
-class NewsItems(commands: CommandBus, newsItemReport: QueryableReport[NewsItemReport])
+class NewsItems(eventStore: EventStore, newsItemReport: ReportRef[NewsItemReport])
   extends SimpleStateful {
 
   private var identifier = newIdentifier
@@ -26,10 +25,12 @@ class NewsItems(commands: CommandBus, newsItemReport: QueryableReport[NewsItemRe
     def doSubmit() {
       try {
         content.trim match {
-          case s if s.size < 3 => S.error("content is required")
+          case s if s.size < 3 => S.error("a news item should contain at least three characters")
           case s =>
-            commands.send(Update(identifier, InitialRevision, NewsItemAdded(s)))
+            val event = NewsItemAdded(s)
+            eventStore.commit(Commit(identifier, InitialRevision, Seq(event)))
             S.notice("News item '" + s + "' added.")
+
             identifier = newIdentifier
             content = ""
         }

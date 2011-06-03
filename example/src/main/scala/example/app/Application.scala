@@ -5,14 +5,14 @@ import com.mchange.v2.c3p0.ComboPooledDataSource
 import org.squeryl.{Session, SessionFactory}
 import org.squeryl.PrimitiveTypeMode._
 import com.zilverline.es2._, commands._, domain._, eventstore._, reports._
-import example.commands._
 import example.domain._
 import example.reports._
 import net.liftweb.json.{FullTypeHints, Serialization}
 import net.liftweb.util.Props
+import net.liftweb.json.ext.JodaTimeSerializers
 
 object Application {
-  val eventSerializer = new JsonSerializer()(Serialization.formats(new FullTypeHints(classOf[DomainEvent] :: Nil)))
+  val eventSerializer = new JsonSerializer()(Serialization.formats(new FullTypeHints(classOf[DomainEvent] :: Nil)) ++ JodaTimeSerializers.all)
   implicit val aggregates = new Aggregates(Invoice)
   val reports = {
     val result = new Reports
@@ -29,17 +29,7 @@ object Application {
     result.addListener(commit => reports.applyEvent(commit))
     result
   }
-  val commands = {
-    val result = new CommandBus(eventStore, aggregates)
-    result.register[CreateDraftInvoice] {command =>
-      Reference[Invoice](command.invoiceId).run(Invoice.createDraft)
-    }
-    result.register[ChangeInvoiceRecipient] {command =>
-      Reference[DraftInvoice](command.invoiceId).run(_.changeRecipient(command.recipient))
-    }
-    result.registerHandler(CommandHandler.updateCommandHandler)
-    result
-  }
+  val commands = new Commands(eventStore, aggregates)
 
   val jdbcUrl = Props.get("jdbc.url", "jdbc:mysql://localhost:3306/es2_dev")
   val jdbcDriver = Props.get("jdbc.driver", "com.mysql.jdbc.Driver")
