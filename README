@@ -1,0 +1,9 @@
+Example code to accompany my Scala Days 2011 presentation on exploring
+lightweight event sourcing. For the slides, see
+http://www.slideshare.net/dlrozendaal/exloring-lightweight-event-sourcing.
+
+To start the application, run "sbt jetty" and point your browser to
+http://localhost:8080/
+
+Functionality is extremely limited, but give you some idea on how 
+event sourcing can be implemented.
