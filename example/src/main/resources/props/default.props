@@ -1,4 +1,5 @@
-jdbc.url=jdbc:mysql://localhost:3306/es2_dev
-jdbc.driver=com.mysql.jdbc.Driver
+squeryl.database.adapter=org.squeryl.adapters.H2Adapter
+jdbc.url=jdbc:h2:mem:test
+jdbc.driver=org.h2.Driver
 jdbc.user=root
 jdbc.password=

@@ -10,6 +10,7 @@ import example.reports._
 import net.liftweb.json.{FullTypeHints, Serialization}
 import net.liftweb.util.Props
 import net.liftweb.json.ext.JodaTimeSerializers
+import org.squeryl.internals.DatabaseAdapter
 
 object Application {
   val eventSerializer = new JsonSerializer()(Serialization.formats(new FullTypeHints(classOf[DomainEvent] :: Nil)) ++ JodaTimeSerializers.all)
@@ -31,10 +32,11 @@ object Application {
   }
   val commands = new Commands(eventStore, aggregates)
 
-  val jdbcUrl = Props.get("jdbc.url", "jdbc:mysql://localhost:3306/es2_dev")
-  val jdbcDriver = Props.get("jdbc.driver", "com.mysql.jdbc.Driver")
+  val jdbcUrl = Props.get("jdbc.url", "jdbc:h2:mem:test")
+  val jdbcDriver = Props.get("jdbc.driver", "org.h2.Driver")
   val jdbcUser = Props.get("jdbc.user", "root")
   val jdbcPassword = Props.get("jdbc.password", "")
+  val squerylDatabaseAdapterClass = Props.get("squeryl.database.adapter", "org.squeryl.adapters.H2Adapter")
 
   Class.forName(jdbcDriver)
 
@@ -46,13 +48,10 @@ object Application {
   c3p0.setInitialPoolSize(1)
   c3p0.setMaxPoolSize(100)
 
-  val databaseAdapter = new MySQLAdapter
+  val databaseAdapter = Class.forName(squerylDatabaseAdapterClass).newInstance.asInstanceOf[DatabaseAdapter]
 
   SessionFactory.concreteFactory = Some {
-    () =>
-      val result = Session.create(c3p0.getConnection, databaseAdapter)
-      //result.setLogger(logger.debug _)
-      result
+    () => Session.create(c3p0.getConnection, databaseAdapter)
   }
 
   try {

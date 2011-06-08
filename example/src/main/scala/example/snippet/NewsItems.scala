@@ -27,10 +27,11 @@ class NewsItems(eventStore: EventStore, newsItemReport: ReportRef[NewsItemReport
         content.trim match {
           case s if s.size < 3 => S.error("a news item should contain at least three characters")
           case s =>
+
             val event = NewsItemAdded(s)
             eventStore.commit(Commit(identifier, InitialRevision, Seq(event)))
-            S.notice("News item '" + s + "' added.")
 
+            S.notice("News item '" + s + "' added.")
             identifier = newIdentifier
             content = ""
         }

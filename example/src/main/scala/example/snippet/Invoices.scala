@@ -76,7 +76,7 @@ class EditInvoiceSnippet(commands: Commands) extends SimpleStateful {
         on[DraftInvoice](invoice.invoiceId) execute {_.changeRecipient(recipient)}
 
         S.notice("Recipient changed to '" + recipient + "'.")
-        S.redirectTo(Invoices.editInvoiceLoc.calcHref(invoice))
+        S.redirectTo(Invoices.listInvoicesLink)
       }
     }
 
