@@ -12,7 +12,7 @@ object AggregateEventHandler {
     new PartialFunction[RecordedEvent, B] {
       def apply(recorded: RecordedEvent) =
         if (isDefinedAt(recorded)) handler.applyFromHistory(recorded.asInstanceOf[Committed[A]])
-        else error("unhandled event " + recorded + " for " + this)
+        else sys.error("unhandled event " + recorded + " for " + this)
 
       def isDefinedAt(recorded: RecordedEvent) = m.erasure.isInstance(recorded.payload)
     }

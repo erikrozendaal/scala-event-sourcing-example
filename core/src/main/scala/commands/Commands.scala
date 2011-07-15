@@ -11,7 +11,7 @@ trait Modify[A] {
 class Commands(eventStore: EventStore, aggregates: Aggregates) {
   def on[A](aggregateId: Identifier): Modify[A] = new Modify[A] {
     def execute[B](f: A => Behavior[B]): B = {
-      val Reaction(session, result) = (Reference[A](aggregateId).modify(f))(Session(aggregateId, aggregates))
+      val Reaction(session, result) = Reference[A](aggregateId).modify(f)(Session(aggregateId, aggregates))
       commitChanges(session)
       result
     }

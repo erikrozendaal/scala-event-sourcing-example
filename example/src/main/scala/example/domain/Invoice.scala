@@ -51,5 +51,5 @@ case class DraftInvoice(
 }
 
 case class SentInvoice(sentOn: LocalDate, paymentDueOn: LocalDate) extends Invoice {
-  protected[this] def applyEvent = error("final state")
+  protected[this] def applyEvent = sys.error("final state")
 }

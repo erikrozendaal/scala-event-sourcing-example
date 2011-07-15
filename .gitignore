@@ -1,3 +1,4 @@
+.scala_dependencies
 target/
 lib_managed/
 src_managed/

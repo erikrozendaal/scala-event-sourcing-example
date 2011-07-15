@@ -68,7 +68,7 @@ case class Reference[+A](aggregateId: Identifier) {
           case Some(aggregate) =>
             trackEventSource(aggregate.id, aggregate.revision, aggregate.root.asInstanceOf[A])
           case None =>
-            error("unknown aggregate <" + aggregateId + ">")
+            sys.error("unknown aggregate <" + aggregateId + ">")
         }
     }
   }
