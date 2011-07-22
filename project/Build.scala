@@ -1,10 +1,10 @@
 import sbt._, Keys._
 
-object MyBuild extends Build {
+object Build extends Build {
   import com.github.siasia.WebPlugin._
 
   val ScalazVersion = "6.0"
-  val LiftVersion = "2.4-M2"
+  val LiftVersion = "2.4-M3"
   val Slf4jVersion = "1.6.1"
 
   val coreDependencies = Seq(
@@ -36,7 +36,8 @@ object MyBuild extends Build {
     organization := "com.zilverline",
     scalaVersion := "2.9.0-1",
     scalacOptions ++= Seq("-deprecation", "-unchecked"),
-    libraryDependencies ++= coreDependencies ++ exampleDependencies
+    libraryDependencies ++= coreDependencies ++ exampleDependencies,
+    resolvers += "Java.net Maven2 Repository" at "http://download.java.net/maven/2/"
   )
 
   lazy val root = Project("root", file(".")) aggregate (core, example) settings (name := "es2-root")
