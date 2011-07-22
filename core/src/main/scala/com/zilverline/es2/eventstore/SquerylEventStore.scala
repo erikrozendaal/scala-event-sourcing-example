@@ -5,22 +5,22 @@ import org.squeryl._
 import org.squeryl.PrimitiveTypeMode._
 
 case class EventStream(source: String, revision: Long) {
-  def this() = this ("", 0L)
+  def this() = this("", 0L)
 }
 
 case class EventStreamRecord(id: Long, source: String, sequence: Long, event: Array[Byte]) extends KeyedEntity[Long] {
-  def this() = this (0, "", 0L, Array.empty)
+  def this() = this(0, "", 0L, Array.empty)
 }
 
 object SquerylEventStore extends Schema {
   val EventStreams = table[EventStream]
   val EventStreamRecords = table[EventStreamRecord]
 
-  on(EventStreams) {t =>
+  on(EventStreams) { t =>
     declare(
       t.source is (primaryKey, dbType("varchar(36)")))
   }
-  on(EventStreamRecords) {t =>
+  on(EventStreamRecords) { t =>
     declare(
       t.source is (dbType("varchar(36)")),
       columns(t.source, t.sequence) are (unique))
@@ -70,7 +70,22 @@ class SquerylEventStore(serializer: Serializer, dispatcher: Seq[CommittedEvent] 
     case e => println("failed to deserialize " + s); throw e
   }
 
-  private def createEventStream(attempt: Commit) {
+  private def insertEvents(attempt: Commit, events: Iterable[CommittedEvent]) {
+    inTransaction {
+      createOrUpdateStream(attempt)
+      appendEventsToStream(events)
+    }
+  }
+
+  private def createOrUpdateStream(attempt: Commit) {
+    if (attempt.revision == 0) {
+      createStream(attempt)
+    } else {
+      updateStream(attempt)
+    }
+  }
+
+  private def createStream(attempt: Commit) {
     try {
       EventStreams.insert(EventStream(attempt.source, attempt.events.size))
     } catch {
@@ -83,7 +98,7 @@ class SquerylEventStore(serializer: Serializer, dispatcher: Seq[CommittedEvent] 
     }
   }
 
-  private def updateEventStream(attempt: Commit) {
+  private def updateStream(attempt: Commit) {
     val count = update(EventStreams)(r =>
       where(r.source === (attempt.source: String) and r.revision === attempt.revision)
         .set(r.revision := r.revision.~ + attempt.events.size))
@@ -91,15 +106,8 @@ class SquerylEventStore(serializer: Serializer, dispatcher: Seq[CommittedEvent] 
       throw new OptimisticLockingException("sequence number <" + attempt.revision + "> does not match expected for event source <" + attempt.source + ">")
   }
 
-  private def insertEvents(attempt: Commit, events: Iterable[CommittedEvent]) {
-    inTransaction {
-      if (attempt.revision == 0) {
-        createEventStream(attempt)
-      } else {
-        updateEventStream(attempt)
-      }
-      val records = events.map(event => EventStreamRecord(0, event.eventSourceId, event.sequence, write(event.payload)))
-      EventStreamRecords.insert(records)
-    }
+  private def appendEventsToStream(events: Iterable[CommittedEvent]) {
+    val records = events.map(event => EventStreamRecord(0, event.eventSourceId, event.sequence, write(event.payload)))
+    EventStreamRecords.insert(records)
   }
 }
