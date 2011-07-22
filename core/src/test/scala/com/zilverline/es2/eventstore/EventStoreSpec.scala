@@ -6,7 +6,7 @@ import org.specs2.execute.Success
 
 abstract class EventStoreSpec extends org.specs2.mutable.SpecificationWithJUnit {
 
-  def makeEmptyEventStore(listeners: EventStore#EventStoreListener*): EventStore
+  def makeEmptyEventStore(dispatcher: Seq[CommittedEvent] => Unit): EventStore
 
   trait Context extends Success {
     val StreamA = newIdentifier
@@ -15,7 +15,7 @@ abstract class EventStoreSpec extends org.specs2.mutable.SpecificationWithJUnit 
     val Event1 = ExampleEvent("first")
     val Event2 = ExampleEvent("second")
 
-    val subject = makeEmptyEventStore()
+    val subject = makeEmptyEventStore(events => ())
   }
 
   "event store" should {
@@ -89,25 +89,17 @@ abstract class EventStoreSpec extends org.specs2.mutable.SpecificationWithJUnit 
     trait ContextWithListener extends Context {
       val received: mutable.Queue[(Identifier, Any)] = mutable.Queue()
 
-      def listener: EventStore#EventStoreListener = {
-        commit => received += commit.eventSourceId -> commit.payload
+      def listener(commit: Seq[CommittedEvent]) {
+        received ++= commit.map(event => event.eventSourceId -> event.payload)
       }
     }
 
-    "dispatch saved events to listener" in new ContextWithListener {
+    "dispatch commits to listener" in new ContextWithListener {
       override val subject = makeEmptyEventStore(listener)
 
       subject.commit(Commit(StreamA, 0, Seq(Event1)))
 
       received must beEqualTo(Seq(StreamA -> Event1))
-    }
-
-    "support multiple listeners" in new ContextWithListener {
-      override val subject = makeEmptyEventStore(listener, listener)
-      
-      subject.commit(Commit(StreamA, 0, Seq(Event1)))
-
-      received must beEqualTo(Seq(StreamA -> Event1, StreamA -> Event1))
     }
   }
 }

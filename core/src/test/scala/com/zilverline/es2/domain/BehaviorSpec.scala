@@ -21,7 +21,7 @@ class BehaviorSpec extends org.specs2.mutable.SpecificationWithJUnit with org.sp
 
     implicit val aggregates = new Aggregates()
     val EventSourceId = newIdentifier
-    val eventStore = new MemoryEventStore(Vector.empty)
+    val eventStore = new MemoryEventStore(events => ())
 
     def tracksEventSources: Result = forAll {(revision: Revision, value: String) =>
       (revision >= InitialRevision) ==> {

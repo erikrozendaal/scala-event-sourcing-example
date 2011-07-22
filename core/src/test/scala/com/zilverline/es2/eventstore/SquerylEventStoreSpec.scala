@@ -37,9 +37,9 @@ class SquerylEventStoreSpec extends EventStoreSpec {
 
   def serializer = new JsonSerializer()(Serialization.formats(new FullTypeHints(classOf[DomainEvent] :: Nil)))
   
-  override def makeEmptyEventStore(listeners: EventStore#EventStoreListener*) = {
+  override def makeEmptyEventStore(dispatcher: Seq[CommittedEvent] => Unit) = {
     TestDatabase.clear
-    new SquerylEventStore(serializer, listeners)
+    new SquerylEventStore(serializer, dispatcher)
   }
 
   val Source = newIdentifier
@@ -56,19 +56,19 @@ class SquerylEventStoreSpec extends EventStoreSpec {
     }
 
     forExample("invoke listeners for each committed event") ! new Context {
-      var committed: Option[CommittedEvent] = None
-      override val subject = makeEmptyEventStore(c => committed = Some(c))
+      var committed = Vector.empty[CommittedEvent]
+      override val subject = makeEmptyEventStore(committed ++= _)
 
       subject.commit(Commit(Source, 0, originals.take(1)))
 
-      committed must beEqualTo(Some(Committed(Source, 1, ExampleEvent("example"))))
+      committed must beEqualTo(Vector(Committed(Source, 1, ExampleEvent("example"))))
     }
 
     forExample("replay previously committed events") ! new Context {
-      var replayed: ArrayBuffer[CommittedEvent] = ArrayBuffer.empty
-      override val subject = makeEmptyEventStore(event => replayed += event)
+      var replayed = Vector.empty[CommittedEvent]
+      override val subject = makeEmptyEventStore(replayed ++= _)
       subject.commit(Commit(Source, 0, originals))
-      replayed.clear()
+      replayed = Vector.empty[CommittedEvent]
 
       subject.replayAllEvents
 

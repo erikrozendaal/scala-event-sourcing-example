@@ -27,7 +27,7 @@ object SquerylEventStore extends Schema {
   }
 }
 
-class SquerylEventStore(serializer: Serializer, override val listeners: Seq[EventStore#EventStoreListener]) extends EventStore {
+class SquerylEventStore(serializer: Serializer, dispatcher: Seq[CommittedEvent] => Unit) extends EventStore {
 
   import SquerylEventStore._
 
@@ -42,7 +42,7 @@ class SquerylEventStore(serializer: Serializer, override val listeners: Seq[Even
       // TODO only lock the event source being committed
       val committed = makeCommittedEvents(attempt)
       insertEvents(attempt, committed)
-      dispatchEvents(committed)
+      dispatcher(committed)
     }
   }
 
@@ -58,7 +58,7 @@ class SquerylEventStore(serializer: Serializer, override val listeners: Seq[Even
     transaction {
       val records = from(EventStreamRecords)(r => select(r).orderBy(r.id asc))
       val events = records.toStream.map(record => Committed(record.source, record.sequence, read(record.event)))
-      dispatchEvents(events)
+      dispatcher(events)
     }
   }
 

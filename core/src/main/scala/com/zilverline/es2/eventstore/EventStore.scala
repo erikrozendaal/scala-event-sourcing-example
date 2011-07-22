@@ -8,11 +8,7 @@ class OptimisticLockingException(message: String) extends RuntimeException(messa
 case class Commit(source: Identifier, revision: Revision, events: Seq[DomainEvent])
 
 trait EventStore {
-  type EventStoreListener = CommittedEvent => Unit
-
   def commit(attempt: Commit)
-  
-  protected def listeners: Seq[EventStoreListener]
 
   def load(source: Identifier): Seq[CommittedEvent]
 
@@ -23,11 +19,6 @@ trait EventStore {
     commit.events.zipWithIndex map {
       case (event, index) => Committed(commit.source, commit.revision + 1 + index, event)
     }
-  }
-
-  protected[this] def dispatchEvents(events: Iterable[CommittedEvent]) {
-    val listeners = this.listeners
-    for (event <- events; listener <- listeners) listener(event)
   }
 }
 
