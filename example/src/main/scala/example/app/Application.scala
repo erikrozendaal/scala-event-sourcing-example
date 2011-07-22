@@ -25,9 +25,9 @@ object Application {
   val newsItemReport = reports.queryable[NewsItemReport]
 
   val eventStore: EventStore = {
-    val result = new SquerylEventStore(eventSerializer) with LoggingEventStore
-    result.addListener(commit => aggregates.applyEvent(commit))
-    result.addListener(commit => reports.applyEvent(commit))
+    val result = new SquerylEventStore(eventSerializer, Vector(
+        commit => aggregates.applyEvent(commit),
+        commit => reports.applyEvent(commit))) with LoggingEventStore
     result
   }
   val commands = new Commands(eventStore, aggregates)

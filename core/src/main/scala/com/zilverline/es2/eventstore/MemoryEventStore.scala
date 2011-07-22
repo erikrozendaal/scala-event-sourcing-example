@@ -3,7 +3,7 @@ package eventstore
 
 import scala.collection.mutable.{Map => MMap}
 
-class MemoryEventStore extends EventStore {
+class MemoryEventStore(override val listeners: Seq[EventStore#EventStoreListener]) extends EventStore {
 
   def commit(attempt: Commit) {
     if (attempt.events.isEmpty) return

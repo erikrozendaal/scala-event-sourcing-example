@@ -27,7 +27,7 @@ object SquerylEventStore extends Schema {
   }
 }
 
-class SquerylEventStore(serializer: Serializer) extends EventStore {
+class SquerylEventStore(serializer: Serializer, override val listeners: Seq[EventStore#EventStoreListener]) extends EventStore {
 
   import SquerylEventStore._
 

@@ -11,12 +11,10 @@ trait EventStore {
   type EventStoreListener = CommittedEvent => Unit
 
   def commit(attempt: Commit)
+  
+  protected def listeners: Seq[EventStoreListener]
 
   def load(source: Identifier): Seq[CommittedEvent]
-
-  def addListener(callback: EventStoreListener) {
-    synchronized {listeners = listeners :+ callback}
-  }
 
   def replayAllEvents() {
   }
@@ -31,9 +29,6 @@ trait EventStore {
     val listeners = this.listeners
     for (event <- events; listener <- listeners) listener(event)
   }
-
-  @volatile
-  private var listeners: IndexedSeq[EventStoreListener] = IndexedSeq.empty
 }
 
 trait LoggingEventStore extends EventStore with Logging {

@@ -13,7 +13,7 @@ class CommandsSpec extends org.specs2.mutable.SpecificationWithJUnit {
     val Source = newIdentifier
 
     implicit val aggregates = new Aggregates()
-    val eventStore = new eventstore.MemoryEventStore
+    val eventStore = new eventstore.MemoryEventStore(Vector.empty)
     val subject = new Commands(eventStore, aggregates)
 
     def commitEvents = {
