@@ -40,12 +40,11 @@ object Build extends Build {
     resolvers += "Java.net Maven2 Repository" at "http://download.java.net/maven/2/"
   )
 
-  lazy val root = Project("root", file(".")) aggregate (core, example) settings (name := "es2-root")
+  lazy val root = Project("es2-root", file(".")) aggregate (core, example)
 
-  lazy val core = Project("core", file("core")) settings (name := "es2-core")
+  lazy val core = Project("es2-core", file("core"))
 
-  lazy val example = Project("example", file("example")) dependsOn (core) settings (webSettings :_*) settings (
-    name := "es2-example",
+  lazy val example = Project("es2-example", file("example")) dependsOn (core) settings (webSettings :_*) settings (
     libraryDependencies ++= Seq(
       "org.mortbay.jetty" % "jetty" % "6.1.25" % "jetty",
       "javax.servlet" % "servlet-api" % "2.5" % "provided"
