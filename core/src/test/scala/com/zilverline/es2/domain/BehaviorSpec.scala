@@ -6,7 +6,8 @@ import org.specs2.execute.Result
 import EventGenerators._
 import org.scalacheck.Prop._
 
-class BehaviorSpec extends org.specs2.mutable.SpecificationWithJUnit with org.specs2.ScalaCheck {
+@org.junit.runner.RunWith(classOf[org.specs2.runner.JUnitRunner])
+class BehaviorSpec extends org.specs2.mutable.Specification with org.specs2.ScalaCheck {
 
   "A behavior" should {
     "track event sources" in behavior().tracksEventSources

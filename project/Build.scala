@@ -15,7 +15,7 @@ object Build extends Build {
     "net.liftweb" %% "lift-json-ext" % LiftVersion withSources (),
     "org.slf4j" % "slf4j-api" % Slf4jVersion withSources (),
     "junit" % "junit" % "4.8.2" % "test" withSources (),
-    "org.specs2" %% "specs2" % "1.3" % "test" withSources (),
+    "org.specs2" %% "specs2" % "1.5" % "test" withSources (),
     "com.h2database" % "h2" % "1.3.151", // % "test" withSources (),
     "mysql" % "mysql-connector-java" % "5.1.15" % "test"
   )

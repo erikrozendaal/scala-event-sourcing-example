@@ -29,6 +29,7 @@ object TestDatabase {
   }
 }
 
+@org.junit.runner.RunWith(classOf[org.specs2.runner.JUnitRunner])
 class SquerylEventStoreSpec extends EventStoreSpec {
 
   sequential

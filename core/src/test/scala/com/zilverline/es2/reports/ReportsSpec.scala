@@ -1,7 +1,8 @@
 package com.zilverline.es2
 package reports
 
-class ReportsSpec extends org.specs2.mutable.SpecificationWithJUnit {
+@org.junit.runner.RunWith(classOf[org.specs2.runner.JUnitRunner])
+class ReportsSpec extends org.specs2.mutable.Specification {
 
   case class EventCountReport(count: Int) extends Report[DomainEvent] {
     def applyEvent = _ => copy(count + 1)

@@ -3,7 +3,8 @@ package commands
 
 import domain._, Behavior._
 
-class CommandsSpec extends org.specs2.mutable.SpecificationWithJUnit {
+@org.junit.runner.RunWith(classOf[org.specs2.runner.JUnitRunner])
+class CommandsSpec extends org.specs2.mutable.Specification {
 
   "command bus" should {
     "commit events from reaction" in context().commitEvents

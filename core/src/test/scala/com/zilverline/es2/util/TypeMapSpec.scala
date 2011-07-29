@@ -1,7 +1,8 @@
 package com.zilverline.es2
 package util
 
-class TypeMapSpec extends org.specs2.mutable.SpecificationWithJUnit {
+@org.junit.runner.RunWith(classOf[org.specs2.runner.JUnitRunner])
+class TypeMapSpec extends org.specs2.mutable.Specification {
   val empty = TypeMap.empty
 
   trait Root

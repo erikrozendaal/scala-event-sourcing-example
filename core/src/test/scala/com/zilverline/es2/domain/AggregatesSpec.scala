@@ -3,7 +3,8 @@ package domain
 
 import org.specs2.execute.Success
 
-class AggregatesSpec extends org.specs2.mutable.SpecificationWithJUnit {
+@org.junit.runner.RunWith(classOf[org.specs2.runner.JUnitRunner])
+class AggregatesSpec extends org.specs2.mutable.Specification {
 
   case class ExampleAggregateRoot(content: String) extends AggregateRoot {
     type Event = ExampleEvent

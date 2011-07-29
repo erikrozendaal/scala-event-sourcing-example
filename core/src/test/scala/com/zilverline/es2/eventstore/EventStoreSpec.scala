@@ -4,7 +4,7 @@ package eventstore
 import scala.collection._
 import org.specs2.execute.Success
 
-abstract class EventStoreSpec extends org.specs2.mutable.SpecificationWithJUnit {
+abstract class EventStoreSpec extends org.specs2.mutable.Specification {
 
   def makeEmptyEventStore(dispatcher: Seq[CommittedEvent] => Unit): EventStore
 
